@@ -1,0 +1,879 @@
+<!--
+<#######################################
+# ACE GENERATED POWER XML FILE
+# Generated on: 2026.09.16 at 07:52:12 PDT
+# By: ACE 10.5.2
+# From project: tc_ref_design_top
+#######################################
+# IO Ring Power Data File
+#######################################
+
+-->
+
+<power_data>
+    <pvt_corner speed_grade="C1" voltage="0.90" temperature="125">
+        <inoc_power row_power="2.3748" column_power="1.5372000000000001"/>
+        <power_rail name="GDDR6_W_VDDIO" static_power="0.7336493039634122" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDR" static_power="1.0086748576987492" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDR" static_power="1.0086748576987492" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.2521687144246873" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDP" static_power="0.7336493039634122" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SE_VDDIO" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SE" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NE_VDDIO" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_NE" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDP" static_power="0.7336493039634122" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GPIO_N0_VDDIO" static_power="0.004977650953276162" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_N_B0" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_SW_PLL_VDDA" static_power="0.010485749806446842" dynamic_power="0.004609687645164869" voltage="1.8">
+            <power_rail_ip name="PLL_SW_1" static_power="0.0026214374516117106" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_0" static_power="0.0026214374516117106" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_3" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_2" static_power="0.0026214374516117106" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDA" static_power="0.7338135772590613" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDH" static_power="2.8831880621467385" dynamic_power="1.8932571428571427" voltage="1.2">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.8932571428571427" voltage="1.2"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.09009962694208555" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="GCG_NW_PLL_VDDA" static_power="0.010485749806446842" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="PLL_NW_3" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_2" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_1" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_0" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDL" static_power="3.674817081141044" dynamic_power="1.4802857142857146" voltage="0.75">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.4802857142857146" voltage="0.75"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.1148380337856577" dynamic_power="0.0" voltage="0.75"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SW_VDDIO" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SW" static_power="0.05315367272727267" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NW_VDDIO" static_power="0.036912272727272676" dynamic_power="0.0" voltage="1.5">
+            <power_rail_ip name="CLKIO_NW" static_power="0.036912272727272676" dynamic_power="0.0" voltage="1.5"/>
+        </power_rail>
+
+        <power_rail name="GPIO_S0_VDDIO" static_power="0.004977650953276162" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_S_B0" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="0.0016592169844253874" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="VCC" static_power="12.17370019368578" dynamic_power="31.9370831505532" voltage="0.9">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B0" static_power="0.05563800000000001" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="NoC" static_power="1.96190073529412" dynamic_power="19.39943752023094" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_3" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_2" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_1" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_0" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_0" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_0" static_power="0.25845776470588233" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_1" static_power="0.5937490588235294" dynamic_power="1.7481209576637267" voltage="0.9"/>
+            <power_rail_ip name="ETH_1" static_power="0.7894111764705882" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="ETH_0" static_power="0.789411176470588" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="0.05563800000000001" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="0.05563800000000001" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SE" static_power="0.00184261764705882" dynamic_power="0.07523782220553632" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_4" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.5052943785386601" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NW" static_power="0.00184261764705882" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SW" static_power="0.00184261764705882" dynamic_power="0.04103881211211072" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B0" static_power="0.06036670588235294" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="0.06036670588235294" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="0.06036670588235294" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="DDR4" static_power="0.1964223529411765" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NE" static_power="0.00184261764705882" dynamic_power="0.05471841614948096" voltage="0.9"/>
+            <power_rail_ip name="SoC" static_power="0.011946621705882354" dynamic_power="0.0020720719307958484" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_1" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_0" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_3" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_2" static_power="6.016497882352941E-4" dynamic_power="0.039715338430467574" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_1" static_power="6.016497882352941E-4" dynamic_power="0.039725093701414436" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_0" static_power="6.016497882352941E-4" dynamic_power="0.039921720644236415" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_3" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_2" static_power="6.016497882352941E-4" dynamic_power="0.040504209482370684" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_0" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.09890735294117647" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_3" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_2" static_power="6.016497882352941E-4" dynamic_power="0.045237435793789374" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_1" static_power="6.016497882352941E-4" dynamic_power="0.0" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GCG_SE_PLL_VDDA" static_power="0.010485749806446842" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_SE_1" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_0" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_3" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_2" static_power="0.0026214374516117106" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="TS_VDDA" static_power="3.5438400000000007E-4" dynamic_power="8.859600000000002E-5" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="3.5438400000000007E-4" dynamic_power="8.859600000000002E-5" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="FCU_VDDIO" static_power="0.6761664000000001" dynamic_power="0.16904160000000001" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="0.6761664000000001" dynamic_power="0.16904160000000001" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDA" static_power="0.7338135772590613" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.18345339431476532" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VDDQ" static_power="0.2419047619047619" dynamic_power="0.0" voltage="1.2">
+            <power_rail_ip name="DDR4" static_power="0.2419047619047619" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VAA" static_power="0.013" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="DDR4" static_power="0.013" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_NE_PLL_VDDA" static_power="0.010485749806446842" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_NE_0" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_3" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_2" static_power="0.0026214374516117106" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_1" static_power="0.0026214374516117106" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDIO" static_power="0.7336493039634122" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.18341232599085305" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+    </pvt_corner>
+
+    <pvt_corner speed_grade="C1" voltage="0.90" temperature="0">
+        <inoc_power row_power="2.3748" column_power="1.5372000000000001"/>
+        <power_rail name="GDDR6_W_VDDIO" static_power="0.013734923902143231" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDR" static_power="0.018883780489742534" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDR" static_power="0.018883780489742534" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.0047209451224356335" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDP" static_power="0.013734923902143231" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SE_VDDIO" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SE" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NE_VDDIO" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_NE" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDP" static_power="0.013734923902143231" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GPIO_N0_VDDIO" static_power="9.318162584532976E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_N_B0" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_SW_PLL_VDDA" static_power="1.962932363766849E-4" dynamic_power="0.004609687645164869" voltage="1.8">
+            <power_rail_ip name="PLL_SW_1" static_power="4.907330909417123E-5" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_0" static_power="4.907330909417123E-5" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_3" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_2" static_power="4.907330909417123E-5" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDA" static_power="0.01373799932415032" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDH" static_power="0.05397328052338695" dynamic_power="1.8932571428571427" voltage="1.2">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.8932571428571427" voltage="1.2"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.0016866650163558415" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="GCG_NW_PLL_VDDA" static_power="1.962932363766849E-4" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="PLL_NW_3" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_2" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_1" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_0" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDL" static_power="0.0687925757589604" dynamic_power="1.4802857142857146" voltage="0.75">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.4802857142857146" voltage="0.75"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.002149767992467512" dynamic_power="0.0" voltage="0.75"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SW_VDDIO" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SW" static_power="9.950367534545443E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NW_VDDIO" static_power="6.909977454545445E-4" dynamic_power="0.0" voltage="1.5">
+            <power_rail_ip name="CLKIO_NW" static_power="6.909977454545445E-4" dynamic_power="0.0" voltage="1.5"/>
+        </power_rail>
+
+        <power_rail name="GPIO_S0_VDDIO" static_power="9.318162584532976E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_S_B0" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="3.106054194844325E-5" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="VCC" static_power="0.22789722676844504" dynamic_power="31.9370831505532" voltage="0.9">
+            <power_rail_ip name="SERDES_LN_18" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B0" static_power="0.00104154336" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="NoC" static_power="0.03672678176470593" dynamic_power="19.39943752023094" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_3" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_2" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_1" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_0" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_0" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_0" static_power="0.004838329355294118" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_1" static_power="0.01111498238117647" dynamic_power="1.7481209576637267" voltage="0.9"/>
+            <power_rail_ip name="ETH_1" static_power="0.014777777223529413" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="ETH_0" static_power="0.014777777223529407" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="0.00104154336" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="0.00104154336" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SE" static_power="3.4493802352941116E-5" dynamic_power="0.07523782220553632" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_4" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.009459805659074633" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NW" static_power="3.4493802352941116E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SW" static_power="3.4493802352941116E-5" dynamic_power="0.04103881211211072" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B0" static_power="0.0011300647341176472" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="0.0011300647341176472" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="0.0011300647341176472" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="DDR4" static_power="0.003677026447058824" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NE" static_power="3.4493802352941116E-5" dynamic_power="0.05471841614948096" voltage="0.9"/>
+            <power_rail_ip name="SoC" static_power="2.2364075833411766E-4" dynamic_power="0.0020720719307958484" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_1" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_0" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_3" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_2" static_power="1.1262884035764706E-5" dynamic_power="0.039715338430467574" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_1" static_power="1.1262884035764706E-5" dynamic_power="0.039725093701414436" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_0" static_power="1.1262884035764706E-5" dynamic_power="0.039921720644236415" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_3" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_2" static_power="1.1262884035764706E-5" dynamic_power="0.040504209482370684" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_0" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="0.0018515456470588236" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_3" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_2" static_power="1.1262884035764706E-5" dynamic_power="0.045237435793789374" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_1" static_power="1.1262884035764706E-5" dynamic_power="0.0" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GCG_SE_PLL_VDDA" static_power="1.962932363766849E-4" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_SE_1" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_0" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_3" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_2" static_power="4.907330909417123E-5" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="TS_VDDA" static_power="6.6340684800000014E-6" dynamic_power="8.859600000000002E-5" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="6.6340684800000014E-6" dynamic_power="8.859600000000002E-5" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="FCU_VDDIO" static_power="0.012657835008000001" dynamic_power="0.16904160000000001" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="0.012657835008000001" dynamic_power="0.16904160000000001" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDA" static_power="0.01373799932415032" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.00343449983103758" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VDDQ" static_power="0.004528457142857143" dynamic_power="0.0" voltage="1.2">
+            <power_rail_ip name="DDR4" static_power="0.004528457142857143" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VAA" static_power="2.4336E-4" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="DDR4" static_power="2.4336E-4" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_NE_PLL_VDDA" static_power="1.962932363766849E-4" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_NE_0" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_3" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_2" static_power="4.907330909417123E-5" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_1" static_power="4.907330909417123E-5" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDIO" static_power="0.013734923902143231" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.003433730975535808" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+    </pvt_corner>
+
+    <pvt_corner speed_grade="C1" voltage="0.90" temperature="-40">
+        <inoc_power row_power="2.3748" column_power="1.5372000000000001"/>
+        <power_rail name="GDDR6_W_VDDIO" static_power="0.0021848040950355383" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDR" static_power="0.0030038288699439967" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDR" static_power="0.0030038288699439967" dynamic_power="3.60366065755649" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="7.509572174859992E-4" dynamic_power="0.9009151643891224" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDP" static_power="0.0021848040950355383" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SE_VDDIO" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SE" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NE_VDDIO" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_NE" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDP" static_power="0.0021848040950355383" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_0" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_1" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_2" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_3" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+        <power_rail name="GPIO_N0_VDDIO" static_power="1.4818466887903135E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_N_B0" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_SW_PLL_VDDA" static_power="3.121607717379225E-5" dynamic_power="0.004609687645164869" voltage="1.8">
+            <power_rail_ip name="PLL_SW_1" static_power="7.804019293448063E-6" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_0" static_power="7.804019293448063E-6" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_3" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SW_2" static_power="7.804019293448063E-6" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_W_VDDA" static_power="0.0021852933001190846" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_0" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDH" static_power="0.008583250861010836" dynamic_power="1.8932571428571427" voltage="1.2">
+            <power_rail_ip name="SERDES_LN_18" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.8932571428571427" voltage="1.2"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="2.682265894065887E-4" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="GCG_NW_PLL_VDDA" static_power="3.121607717379225E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="PLL_NW_3" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_2" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_1" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NW_0" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="SRDS_N_PA_VDDL" static_power="0.010939930450556896" dynamic_power="1.4802857142857146" voltage="0.75">
+            <power_rail_ip name="SERDES_LN_18" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="PCIE_1" static_power="0.0" dynamic_power="1.4802857142857146" voltage="0.75"/>
+            <power_rail_ip name="ETH_1" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="ETH_0" static_power="0.0" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="3.4187282657990295E-4" dynamic_power="0.0" voltage="0.75"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_SW_VDDIO" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8">
+            <power_rail_ip name="CLKIO_SW" static_power="1.5823848370909074E-4" dynamic_power="0.3592099636363633" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="CLKIO_NW_VDDIO" static_power="1.0988783590909075E-4" dynamic_power="0.0" voltage="1.5">
+            <power_rail_ip name="CLKIO_NW" static_power="1.0988783590909075E-4" dynamic_power="0.0" voltage="1.5"/>
+        </power_rail>
+
+        <power_rail name="GPIO_S0_VDDIO" static_power="1.4818466887903135E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="GPIO_S_B0" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="4.939488962634378E-6" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="VCC" static_power="0.03624512836964124" dynamic_power="31.9370831505532" voltage="0.9">
+            <power_rail_ip name="SERDES_LN_18" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_17" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B0" static_power="1.6563432600000003E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_16" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="NoC" static_power="0.005840578488970596" dynamic_power="19.39943752023094" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_15" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_14" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_13" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_12" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_11" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_3" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_2" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_1" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NW_0" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_19" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_9" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_8" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_0" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_1" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_2" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_0" static_power="7.694287655294117E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_3" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="PCIE_1" static_power="0.001767590948117647" dynamic_power="1.7481209576637267" voltage="0.9"/>
+            <power_rail_ip name="ETH_1" static_power="0.0023500770723529412" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_3" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_10" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="ETH_0" static_power="0.0023500770723529404" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_2" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_1" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_0" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_7" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_6" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_5" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B1" static_power="1.6563432600000003E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_4" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_N_B2" static_power="1.6563432600000003E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SE" static_power="5.485472735294108E-6" dynamic_power="0.07523782220553632" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_4" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="0.0015047642265394393" dynamic_power="1.3014192190260399" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NW" static_power="5.485472735294108E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_SW" static_power="5.485472735294108E-6" dynamic_power="0.04103881211211072" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B0" static_power="1.797116834117647E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B1" static_power="1.797116834117647E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="GPIO_S_B2" static_power="1.797116834117647E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="DDR4" static_power="5.847493447058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="CLKIO_NE" static_power="5.485472735294108E-6" dynamic_power="0.05471841614948096" voltage="0.9"/>
+            <power_rail_ip name="SoC" static_power="3.5565092818411766E-5" dynamic_power="0.0020720719307958484" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_31" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_30" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_1" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_0" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_3" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SE_2" static_power="1.7911114195764706E-6" dynamic_power="0.039715338430467574" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_29" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_28" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_27" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_26" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_25" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_24" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_23" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_22" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_1" static_power="1.7911114195764706E-6" dynamic_power="0.039725093701414436" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_0" static_power="1.7911114195764706E-6" dynamic_power="0.039921720644236415" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_3" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_SW_2" static_power="1.7911114195764706E-6" dynamic_power="0.040504209482370684" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_0" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_21" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="SERDES_LN_20" static_power="2.944471897058824E-4" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_3" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_2" static_power="1.7911114195764706E-6" dynamic_power="0.045237435793789374" voltage="0.9"/>
+            <power_rail_ip name="PLL_NE_1" static_power="1.7911114195764706E-6" dynamic_power="0.0" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="GCG_SE_PLL_VDDA" static_power="3.121607717379225E-5" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_SE_1" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_0" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_3" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_SE_2" static_power="7.804019293448063E-6" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="TS_VDDA" static_power="1.0550011680000003E-6" dynamic_power="8.859600000000002E-5" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="1.0550011680000003E-6" dynamic_power="8.859600000000002E-5" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="FCU_VDDIO" static_power="0.0020129473728000002" dynamic_power="0.16904160000000001" voltage="1.8">
+            <power_rail_ip name="SoC" static_power="0.0020129473728000002" dynamic_power="0.16904160000000001" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDA" static_power="0.0021852933001190846" dynamic_power="11.157363840362052" voltage="0.9">
+            <power_rail_ip name="GDDR6_4" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_5" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_6" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+            <power_rail_ip name="GDDR6_7" static_power="5.463233250297711E-4" dynamic_power="2.789340960090513" voltage="0.9"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VDDQ" static_power="7.201504761904762E-4" dynamic_power="0.0" voltage="1.2">
+            <power_rail_ip name="DDR4" static_power="7.201504761904762E-4" dynamic_power="0.0" voltage="1.2"/>
+        </power_rail>
+
+        <power_rail name="DDR4_S0_VAA" static_power="3.8701E-5" dynamic_power="0.0" voltage="1.8">
+            <power_rail_ip name="DDR4" static_power="3.8701E-5" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GCG_NE_PLL_VDDA" static_power="3.121607717379225E-5" dynamic_power="0.0015365625483882896" voltage="1.8">
+            <power_rail_ip name="PLL_NE_0" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_3" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_2" static_power="7.804019293448063E-6" dynamic_power="0.0015365625483882896" voltage="1.8"/>
+            <power_rail_ip name="PLL_NE_1" static_power="7.804019293448063E-6" dynamic_power="0.0" voltage="1.8"/>
+        </power_rail>
+
+        <power_rail name="GDDR6_E_VDDIO" static_power="0.0021848040950355383" dynamic_power="2.9090973858801084" voltage="1.35">
+            <power_rail_ip name="GDDR6_4" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_5" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_6" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+            <power_rail_ip name="GDDR6_7" static_power="5.462010237588846E-4" dynamic_power="0.7272743464700271" voltage="1.35"/>
+        </power_rail>
+
+    </pvt_corner>
+
+</power_data>
+
+<!--
+
+######################################
+# End IO Ring Power Data File
+######################################
+-->

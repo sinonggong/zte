@@ -1,0 +1,95 @@
+# Synplify project for the S0 node-array test bitstream (src/rtl/pi0_s0_top.sv around paper/rtl/pi0_chip_top.sv).
+# Written rewriter-safe (memory ace-prj-rewriter-quirks): computed values on plain set lines, add_file paths as
+# bare variables, project -result_file on one line.
+foreach required_env {ACE_INSTALL_DIR PI0_REPO_ROOT PI0_S0_TABLES} {
+    if {![info exists ::env($required_env)]} { error "$required_env is not set" }
+}
+set ace_dir $::env(ACE_INSTALL_DIR)
+set repo [file normalize $::env(PI0_REPO_ROOT)]
+set tables [file normalize $::env(PI0_S0_TABLES)]
+set prtl $repo/paper/rtl
+set vrtl $repo/paper/rtl/vector_unit
+
+impl -add pi0_s0_synth -type fpga
+set_option -technology AchronixSpeedster7t
+set_option -part AC7t1500
+set_option -package F53
+set_option -speed_grade C1
+set_option -part_companion ""
+set_option -vlog_std sysv
+set_option -project_relative_includes 1
+set include_paths [list "$ace_dir/libraries" "$repo/src/include" "$vrtl"]
+set include_path_arg [join $include_paths ";"]
+set_option -include_path $include_path_arg
+set_option -hdl_define -set ACX_DEVICE_AC7t1500
+set_option -top_module tc_ref_design_top
+
+# array shape and the vector-node function tables (BRAM ROM images from paper/sw/vector_unit_ref.py --tables)
+proc s0_env {name default} { if {[info exists ::env($name)] && $::env($name) ne ""} { return $::env($name) }; return $default }
+set n_chain [s0_env PI0_S0_N_CHAIN 1]
+set n_pv    [s0_env PI0_S0_N_PV 0]
+set n_vnode [s0_env PI0_S0_N_VNODE 1]
+set n_deep  [s0_env PI0_S0_N_DEEP 0]
+set n_lane  [s0_env PI0_S0_N_LANE 2]
+set naps    [s0_env PI0_S0_NAPS_PER_NODE 2]
+set max_out [s0_env PI0_S0_MAX_OUT 8]
+set stripe  [s0_env PI0_S0_STRIPE 0]
+set id_word [s0_env PI0_S0_ID_WORD 24'h533001]
+set f_gelu  "\"$tables/vu_tbl_gelu.mem\""
+set f_sigm  "\"$tables/vu_tbl_sigm.mem\""
+set f_exp   "\"$tables/vu_tbl_exp.mem\""
+set f_rsqrt "\"$tables/vu_tbl_rsqrt.mem\""
+set f_quant "\"$tables/vu_tbl_quant.mem\""
+set_option -hdl_param -set N_CHAIN $n_chain
+set_option -hdl_param -set N_PV $n_pv
+set_option -hdl_param -set N_VNODE $n_vnode
+set_option -hdl_param -set N_DEEP $n_deep
+set_option -hdl_param -set N_LANE $n_lane
+set_option -hdl_param -set NAPS_PER_NODE $naps
+set_option -hdl_param -set MAX_OUT $max_out
+set_option -hdl_param -set STRIPE $stripe
+set_option -hdl_param -set ID_WORD $id_word
+set_option -hdl_param -set F_GELU $f_gelu
+set_option -hdl_param -set F_SIGM $f_sigm
+set_option -hdl_param -set F_EXP $f_exp
+set_option -hdl_param -set F_RSQRT $f_rsqrt
+set_option -hdl_param -set F_QUANT $f_quant
+
+set_option -multi_file_compilation_unit 1
+set_option -write_verilog 1
+set_option -write_structural_verilog 0
+set_option -write_vhdl 0
+# the node synthesis recipe (paper/synth/run_chip_fit_synth.sh), not the deployed design's tuned profile
+set_option -maxfan 40
+set_option -resource_sharing 0
+set_option -retiming 0
+set_option -pipe 1
+set_option -infer_mlp72 1
+set_option -frequency 500
+set_option -disable_io_insertion 1
+
+set device_model_sv $ace_dir/libraries/device_models/AC7t1500_synplify.sv
+add_file -verilog -vlog_std sysv $device_model_sv
+set rtl_files [list \
+    $repo/src/rtl/reset_processor_v2.sv \
+    $vrtl/vu_pkg.sv $vrtl/vu_add.sv $vrtl/vu_mul.sv $vrtl/vu_round.sv $vrtl/vu_tbl.sv $vrtl/vu_qtab.sv \
+    $vrtl/vu_lane.sv $vrtl/vu_slot_loader.sv $vrtl/vu_word_loader.sv $vrtl/vu_rd_fanout.sv $vrtl/vu_beat_writer.sv $vrtl/vu_wr_merge.sv $vrtl/vu_pdq.sv \
+    $prtl/colpar_nap_mux.sv $vrtl/vu_node.sv $vrtl/vu_node_ml.sv \
+    $prtl/colpar_row_sequencer.sv $prtl/colpar_result_port.sv $prtl/colpar_tile_loader.sv \
+    $prtl/colpar_result_writer.sv $prtl/colpar_node_ctrl.sv $prtl/colpar_prog_fetch.sv $prtl/node_sync.sv \
+    $prtl/mlp72_int8_colpar_chain.sv $prtl/colpar_chain_node.sv $prtl/nap_axi_ports.sv $prtl/pi0_chip_ctrl.sv \
+    $prtl/pi0_host_gddr_bridge.sv $prtl/axi_stripe.sv $prtl/axi_id_reorder.sv \
+    $prtl/pi0_chip_top.sv $repo/src/rtl/pi0_s0_top.sv]
+foreach rtl_path $rtl_files {
+    add_file -verilog -vlog_std sysv $rtl_path
+}
+set device_model_fdc $ace_dir/libraries/device_models/AC7t1500_synplify.fdc
+add_file -constraint $device_model_fdc
+set synplify_sdc $repo/src/constraints/pi0_s0_synplify.sdc
+add_file -constraint $synplify_sdc
+set ioring_sdc $repo/src/ace/ioring_design/tc_ref_design_top_ioring.sdc
+if {[file exists $ioring_sdc]} {
+    add_file -constraint $ioring_sdc
+}
+project -result_file "$repo/build/s0_synplify/pi0_s0_synth/tc_ref_design_top.vm"
+impl -active pi0_s0_synth

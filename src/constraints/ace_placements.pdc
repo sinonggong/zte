@@ -1,0 +1,1394 @@
+# -------------------------------------------------------------------------
+# ACE placements file
+# This defines the physical placement of instances on the die
+# IO locations are defined within the IO ring PDC, however instance locations
+# and placement regions can be defined here
+
+# -------------------------------------------------------------------------
+# Place NAPs
+# For consistency between simulation and implmentation the NAP locations
+# match those in the top level testbench
+# -------------------------------------------------------------------------
+#Quadrant 0: SW
+# ACE aborts run_prepare when a set_placement names an object that is not in
+# the design.  This file enumerates all four TC quads and the FP matrix path,
+# so any build with NUM_TC_QUAD < 4, or with MLP_16BIT = 0 where
+# i_matrix_mult_fp does not exist, leaves placements pointing at nothing.  ACE
+# then reports "Incompatible <objName> and <siteName> list sizes" for the
+# find -insts form, or a missing instance for the others, and the whole flow
+# stops.  Route every placement through a guard that skips silently when the
+# instance is absent.
+proc pi0_place {inst site {batch 0}} {
+    if {[catch {find -insts $inst} objs]} {
+        return
+    }
+    if {[llength $objs] == 0} {
+        return
+    }
+    if {$batch} {
+        set_placement -fixed -batch $objs $site
+    } else {
+        set_placement -fixed $objs $site
+    }
+}
+
+# The NAP floorplan below depends on how many quads the build instantiates,
+# because the shipped coordinates are a four-quadrant pinwheel and a build with
+# fewer quads inherits only a corner of it.
+#
+# At NUM_TC_QUAD=1 that is harmless: quad 0 sits in the SW quadrant and the
+# design uses 39% of the device LUT.
+#
+# At NUM_TC_QUAD=2 it is not.  Quad 1's shipped coordinates are the NW
+# quadrant, so both quads' 64 NAPs land in the LEFT HALF of the 10x8 NoC grid
+# while two quads of logic is about 75% of the device LUT and must spread over
+# all of it.  Every tensor core would be pulled toward a NAP in one half of the
+# die.  The measured 16-TC build already places at only 6.4 LUT per occupied
+# RLB tile (42,223 tiles holding 271,462 LUT, 73.30% tile occupancy at 39.27%
+# LUT), so at two quads the placer has to roughly double its packing density
+# even with a good floorplan.  It does not need a bad one as well.
+#
+# At two quads the split is therefore by column, not by row: quad 0 takes the
+# left columns on odd rows, quad 1 the right columns on even rows.  Each quad
+# spans the full height of the die, its 16 cores have NAPs distributed through
+# their own half, and the two quads cannot contend for a site because their
+# column sets and their row sets are both disjoint.
+#
+# Columns 3 and 8 are reserved in every case for the three top-level NAPs
+# placed further down, which is why no quad ever uses them.
+#
+# The generator reproduces the previous 128 literal placements exactly for the
+# one-quad and four-quad cases; only the two-quad case is new.  Grid extent is
+# 10 columns x 8 rows = 80 sites, which matches "NAP_MASTER Total 18 80" in
+# pnr/reports/tc_ref_design_top_utilization_final.txt.
+proc pi0_place_quad_naps {quad cols rows} {
+    for {set ring 0} {$ring < 16} {incr ring} {
+        set col [lindex $cols [expr {$ring % 4}]]
+        set row [lindex $rows [expr {$ring / 4}]]
+        pi0_place \
+            "tc_gen_quad_${quad}__i_tc_quad.tc_gen_noc_${ring}__i_axi_slave_wrapper.i_axi_slave" \
+            "s:x_core.NOC\[$col\]\[$row\].logic.noc.nap_s"
+        pi0_place \
+            "tc_gen_quad_${quad}__i_tc_quad.tc_gen_noc_${ring}__nap_reg_control_block.i_axi_master.i_axi_master" \
+            "s:x_core.NOC\[$col\]\[$row\].logic.noc.nap_m"
+    }
+}
+
+proc pi0_quad_present {quad} {
+    if {[catch {find -insts "tc_gen_quad_${quad}__i_tc_quad.tc_gen_noc_0__i_axi_slave_wrapper.i_axi_slave"} objs]} {
+        return 0
+    }
+    return [expr {[llength $objs] > 0}]
+}
+
+if {[pi0_quad_present 1] && ![pi0_quad_present 2]} {
+    puts "INFO: pi0 NAP floorplan: two quads, split left/right over the full die height"
+    pi0_place_quad_naps 0 {1 2 4 5}  {1 3 5 7}
+    pi0_place_quad_naps 1 {10 9 7 6} {8 6 4 2}
+} else {
+    puts "INFO: pi0 NAP floorplan: original four-quadrant pinwheel"
+    pi0_place_quad_naps 0 {1 2 4 5}  {1 2 3 4}
+    pi0_place_quad_naps 1 {1 2 4 5}  {8 7 6 5}
+}
+pi0_place_quad_naps 2 {10 9 7 6} {8 7 6 5}
+pi0_place_quad_naps 3 {10 9 7 6} {1 2 3 4}
+
+# -------------------------------------------------------------------------
+# Place MLP & weight BRAM 
+# -------------------------------------------------------------------------
+#Quadrant 0: SW
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][12].logic.bmlp.bram[0]} 1
+
+#Quadrant 1: NW
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[0][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[1][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[2][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[3][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[0][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[1][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[2][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[3][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[5][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[6][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[7][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[8][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[5][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[6][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[7][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[8][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[10][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[11][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[12][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[13][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[10][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[11][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[12][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[13][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[15][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[16][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[17][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[18][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[15][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[16][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[17][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[18][16].logic.bmlp.bram[0]} 1
+
+##Quadrant 2: NE
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][28].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][28].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][28].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][24].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][24].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][24].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][20].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][20].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][20].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][16].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][16].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][16].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][16].logic.bmlp.bram[0]} 1
+
+##Quadrant 3: SE
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][0].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][0].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][0].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][4].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][4].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][4].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][8].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][8].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][8].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[35][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[36][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[37][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[38][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[35][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[36][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[37][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[38][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[30][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[31][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[32][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[33][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[30][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[31][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[32][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[33][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[25][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[26][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[27][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[28][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[25][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[26][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[27][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[28][12].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[20][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[21][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[22][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.stage_0__u_stack_stage_fp.u_acx_mlp72} {s:x_core.BMLP[23][12].logic.bmlp.mlp[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_0__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[20][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_1__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[21][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_2__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[22][12].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.i_matrix_mult_fp.stack_3__u_stack.u_weight_bram.x_bram.stack_brams_0__u_bram_u_bram_u_bram_acx_bram72k_U_ACX_BRAM72K_single} {s:x_core.BMLP[23][12].logic.bmlp.bram[0]} 1
+
+
+# -------------------------------------------------------------------------
+# Place activation BRAM 
+# -------------------------------------------------------------------------
+#Quadrant 0: SW
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][12].logic.bmlp.bram[1]} 1
+
+#Quadrant 1: NW
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[0][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[1][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[2][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[3][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[5][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[6][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[7][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[8][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[10][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[11][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[12][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[13][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[15][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[16][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[17][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[18][16].logic.bmlp.bram[1]} 1
+
+#Quadrant 2: NE
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][28].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][28].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][24].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][24].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][20].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][20].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][16].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][16].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][16].logic.bmlp.bram[1]} 1
+
+#Quadrant 3: SE
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][0].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][0].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][4].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][4].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][8].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][8].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[35][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[36][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[37][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[38][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[30][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[31][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[32][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[33][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[25][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[26][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[27][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[28][12].logic.bmlp.bram[1]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_0__mem_lo_0__0_0} {s:x_core.BMLP[20][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_0__mem_hi_0__0_0} {s:x_core.BMLP[21][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_lo_1__mem_lo_1__0_0} {s:x_core.BMLP[22][12].logic.bmlp.bram[1]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.mem_hi_1__mem_hi_1__0_0} {s:x_core.BMLP[23][12].logic.bmlp.bram[1]} 1
+
+# -------------------------------------------------------------------------
+# Place weight prefetch BRAM 
+# -------------------------------------------------------------------------
+#Quadrant 0: SW
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_0__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][13].logic.bmlp.bram[0]} 1
+
+#Quadrant 1: NW
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[0][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[1][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[2][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[3][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[5][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[6][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[7][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[8][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[10][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[11][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[12][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[13][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[15][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[16][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[17][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_1__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[18][17].logic.bmlp.bram[0]} 1
+
+#Quadrant 2: NE
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][29].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][29].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][25].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][25].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][21].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][21].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][17].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][17].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_2__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][17].logic.bmlp.bram[0]} 1
+
+#Quadrant 3: SE
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_0__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_1__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_2__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][1].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_3__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][1].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_4__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_5__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_6__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][5].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_7__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][5].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_8__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_9__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_10__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][9].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_11__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][9].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[35][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[36][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[37][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_12__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[38][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[30][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[31][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[32][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_13__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[33][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[25][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[26][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[27][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_14__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[28][13].logic.bmlp.bram[0]} 1
+
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__2_pf_mem_0__2_0_0} {s:x_core.BMLP[20][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__1_pf_mem_0__1_0_0} {s:x_core.BMLP[21][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__0_pf_mem_0__0_0_0} {s:x_core.BMLP[22][13].logic.bmlp.bram[0]} 1
+pi0_place {tc_gen_quad_3__i_tc_quad.tc_gen_noc_15__i_tc_core.pf_mem_0__pf_mem_0__0_0    } {s:x_core.BMLP[23][13].logic.bmlp.bram[0]} 1
+
+# Place common reg control block in top middle of SW  
+pi0_place {i_top_ctrl.com_reg_control_block.i_axi_master.i_axi_master} {s:x_core.NOC[3][4].logic.noc.nap_m}
+pi0_place {i_top_ctrl.i_llama_vector_axi_slave_wrapper.i_axi_slave} {s:x_core.NOC[8][4].logic.noc.nap_s}
+
+# Place ADM in top middle of SE: specified in RTL already
+# {s:x_core.NOC[8][4].logic.noc.nap_s}
+  
+# -------------------------------------------------------------------------
+# Example of how to fix the location of an MLP and a BRAM
+# -------------------------------------------------------------------------
+# set_placement -fixed {i:<my_hierarchical_path>.i_bram.U_BRAM72K} {s:x_core.BMLP[29][5].logic.bmlp.bram[0]}
+# set_placement -fixed {i:<my_hierarchical_path>.i_mlp.U_MLP72}    {s:x_core.BMLP[29][5].logic.bmlp.mlp[0]}
+
+# To help the design meet timing
+# set_property fanout_limit 5 [find {*i_axi_pkt_gen_nap.wready*} -nets]
+
+# Make rstn a reset over clock
+#set_clock_type -data_center [get_nets nap_rstn_array[0]]
+#set_clock_type -data_center [get_nets nap_rstn_array[1]]
+#set_clock_type -data_center [get_nets nap_rstn_array[2]]
+#set_clock_type -data_center [get_nets nap_rstn_array[3]]
+#set_clock_type -data_center [get_nets nap_rstn_array[4]]
+#set_clock_type -data_center [get_nets nap_rstn_array[5]]
+#set_clock_type -data_center [get_nets nap_rstn_array[6]]
+#set_clock_type -data_center [get_nets nap_rstn_array[7]]
+#set_clock_type -data_center [get_nets nap_rstn_array[8]]
+#set_clock_type -data_center [get_nets nap_rstn_array[9]]
+#set_clock_type -data_center [get_nets nap_rstn_array[10]]
+#set_clock_type -data_center [get_nets nap_rstn_array[11]]
+#set_clock_type -data_center [get_nets nap_rstn_array[12]]
+#set_clock_type -data_center [get_nets nap_rstn_array[13]]
+#set_clock_type -data_center [get_nets nap_rstn_array[14]]
+#set_clock_type -data_center [get_nets nap_rstn_array[15]]
+
+# placement region 
+#create_region "region_1"  {2  269 27 305}
+#create_region "region_2"  {2  233 27 269}
+#create_region "region_3"  {2  197 27 233}
+#create_region "region_4"  {2  161 27 197}
+#create_region "region_5"  {28 269 52 305}
+#create_region "region_6"  {28 233 52 269}
+#create_region "region_7"  {28 197 52 233}
+#create_region "region_8"  {28 161 52 197}
+#create_region "region_9"  {53 269 77 305}
+#create_region "region_10" {53 233 77 269}
+#create_region "region_11" {53 197 77 233}
+#create_region "region_12" {53 161 77 197}
+#
+#add_region_insts "region_1" [find -insts {gddr_gen_noc_0__i_axi*}]
+#add_region_insts "region_2" [find -insts {gddr_gen_noc_1__i_axi*}]
+#add_region_insts "region_3" [find -insts {gddr_gen_noc_2__i_axi*}]
+#add_region_insts "region_4" [find -insts {gddr_gen_noc_3__i_axi*}]
+#add_region_insts "region_5" [find -insts {gddr_gen_noc_4__i_axi*}]
+#add_region_insts "region_6" [find -insts {gddr_gen_noc_5__i_axi*}]
+#add_region_insts "region_7" [find -insts {gddr_gen_noc_6__i_axi*}]
+#add_region_insts "region_8" [find -insts {gddr_gen_noc_7__i_axi*}]
+#add_region_insts "region_9" [find -insts {gddr_gen_noc_8__i_axi*}]
+#add_region_insts "region_10" [find -insts {gddr_gen_noc_9__i_axi*}]
+#add_region_insts "region_11" [find -insts {gddr_gen_noc_10__i_axi*}]
+#add_region_insts "region_12" [find -insts {gddr_gen_noc_11__i_axi*}]
+#set_property fanout_limit 2 [find {n:gddr_gen_noc_5__i_axi_rand_access_nap.i_write_data_gen.start_d_Z} -nets]

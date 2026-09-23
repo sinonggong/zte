@@ -1,0 +1,47 @@
+--- a/drivers/acxpcie/fops.c
++++ b/drivers/acxpcie/fops.c
+@@ -7,6 +7,7 @@
+ 
+ #include "ioctl.h"
+ #include "main.h"
++#include <linux/dma-mapping.h>
+ 
+ 
+ // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+@@ -94,7 +95,6 @@
+   unsigned long offset;
+   void *kva;
+   size_t size;
+-  unsigned long pfn;
+   int rv;
+ 
+   if (adev->mutex_filp != filp) {
+@@ -142,10 +142,25 @@
+     acxdev_err(&adev->pdev->dev, "acxdev_mmap() vma_size:%lu > buffer_size:%lu\n", vma_size, size);
+     return -EINVAL;
+   }
+-  pfn = virt_to_phys(kva) >> PAGE_SHIFT;
+-  rv = remap_pfn_range(vma, vma->vm_start, pfn, vma_size, vma->vm_page_prot);
++  // Map the coherent buffer with the DMA API, not by hand.
++  //
++  // The original code did
++  //     pfn = virt_to_phys(kva) >> PAGE_SHIFT;
++  //     remap_pfn_range(vma, vma->vm_start, pfn, vma_size, vma->vm_page_prot);
++  // which only works when dma_alloc_coherent() hands back a linear-map
++  // address.  With the device behind an IOMMU in a translated DMA domain --
++  // the default on this host (CONFIG_INTEL_IOMMU_DEFAULT_ON=y, "iommu: Default
++  // domain type: Translated", the card in a DMA-FQ group) -- dma_alloc_coherent()
++  // returns a vmap() of pages that need not be physically contiguous, and
++  // virt_to_phys() of a vmalloc address is garbage.  The PTE it produced had
++  // reserved bits set, so the first user-space store into the buffer took
++  // "Corrupted page table ... Bad pagetable: 000f" and the kernel killed the
++  // process before it could print anything (fics, 2026-09-08, 12 times, on
++  // every DMA attempt).  dma_mmap_coherent() handles both the remapped and the
++  // linear case.
++  rv = dma_mmap_coherent(&adev->pdev->dev, vma, kva, map_p->dma_addr, size);
+   if (rv) {
+-    acxdev_err(&adev->pdev->dev, "acxdev_mmap() remap_pfn_range() failed:%d\n", rv);
++    acxdev_err(&adev->pdev->dev, "acxdev_mmap() dma_mmap_coherent() failed:%d\n", rv);
+     return -EINVAL;
+   }
+   map_p->user_mapped = 1;

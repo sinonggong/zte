@@ -1,0 +1,15 @@
+# S0 node-array bitstream: the host register window's NAP must sit where the PCIe endpoint's BAR0 points
+# (NOC[3][4], pci_express.acxip pf0.bar0_noc_addr_value=04130000000).  nap_axi_target also carries the site in its
+# column/row parameters; this pin is the belt to those braces.  The Device Manager places itself at NOC[8][4].
+# guarded the way src/constraints/ace_placements.pdc guards its placements (find -insts, skip when absent)
+proc s0_place {inst site} {
+    if {[catch {find -insts $inst} objs] || [llength $objs] == 0} {
+        puts "INFO: S0 placement: instance not found, skipped: $inst"
+        return
+    }
+    set_placement -fixed $objs $site
+    puts "INFO: S0 placement: $objs -> $site"
+}
+s0_place {u_array.u_ctrl_nap.i_nap} {s:x_core.NOC[3][4].logic.noc.nap_m}
+# host -> GDDR6 paging bridge target: BAR1 maps NOC[3][5] (pci_express.acxip 0x04140000000); its initiator NAP is free
+s0_place {u_array.g_bridge*u_br_tgt.i_nap} {s:x_core.NOC[3][5].logic.noc.nap_m}

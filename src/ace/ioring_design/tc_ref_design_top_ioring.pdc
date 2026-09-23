@@ -1,0 +1,86 @@
+#######################################
+# ACE GENERATED PDC FILE
+# Generated on: 2026.09.16 at 07:52:11 PDT
+# By: ACE 10.5.2
+# From project: tc_ref_design_top
+#######################################
+# IO Ring Boundary Pin Placement File
+#######################################
+
+# Insertion of boundary pin instances
+# Boundary pins for gddr6_0
+# Boundary pins for gddr6_1
+# Boundary pins for gddr6_2
+# Boundary pins for gddr6_3
+# Boundary pins for gddr6_4
+# Boundary pins for gddr6_5
+# Boundary pins for gddr6_6
+# Boundary pins for gddr6_7
+# Boundary pins for noc
+# Boundary pins for pci_express
+# Status
+create_boundary_pins {p:pci_express_status_flr_pf_active[0]} {pci_express_status_flr_pf_active[0]_ipin} -data
+create_boundary_pins {p:pci_express_status_flr_pf_active[1]} {pci_express_status_flr_pf_active[1]_ipin} -data
+create_boundary_pins {p:pci_express_status_flr_pf_active[2]} {pci_express_status_flr_pf_active[2]_ipin} -data
+create_boundary_pins {p:pci_express_status_flr_pf_active[3]} {pci_express_status_flr_pf_active[3]_ipin} -data
+create_boundary_pins {p:pci_express_status_flr_vf_active} {pci_express_status_flr_vf_active_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[0]} {pci_express_status_ltssm_state[0]_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[1]} {pci_express_status_ltssm_state[1]_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[2]} {pci_express_status_ltssm_state[2]_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[3]} {pci_express_status_ltssm_state[3]_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[4]} {pci_express_status_ltssm_state[4]_ipin} -data
+create_boundary_pins {p:pci_express_status_ltssm_state[5]} {pci_express_status_ltssm_state[5]_ipin} -data
+# Boundary pins for pll
+create_boundary_pins {p:i_mcu_clk} {i_mcu_clk_ipin} -clock
+create_boundary_pins {p:i_reg_clk} {i_reg_clk_ipin} -clock
+# Boundary pins for pll_nap
+create_boundary_pins {p:i_mlp_clk} {i_mlp_clk_ipin} -clock
+# Boundary pins for pll_pcie
+create_boundary_pins {p:pll_pcie_lock} {pll_pcie_lock_ipin} -data
+# Boundary pins for vp_clkio_ne
+create_boundary_pins {p:pcie_perst_l} {pcie_perst_l_ipin} -clock
+set_property used_as_reset 1 {i:pcie_perst_l_ipin}
+# Boundary pins for vp_clkio_se
+# Boundary pins for vp_clkio_sw
+# Boundary pins for vp_pll_se_2
+# Boundary pins for vp_pll_sw_2
+# Boundary pin placement
+# Boundary pins for gddr6_0
+# Boundary pins for gddr6_1
+# Boundary pins for gddr6_2
+# Boundary pins for gddr6_3
+# Boundary pins for gddr6_4
+# Boundary pins for gddr6_5
+# Boundary pins for gddr6_6
+# Boundary pins for gddr6_7
+# Boundary pins for noc
+# Boundary pins for pci_express
+# Status
+set_placement -fixed -batch {p:pci_express_status_flr_pf_active[0]} {d:i_user_10_09_mlp_00[10]}
+set_placement -fixed -batch {p:pci_express_status_flr_pf_active[1]} {d:i_user_10_09_mlp_00[11]}
+set_placement -fixed -batch {p:pci_express_status_flr_pf_active[2]} {d:i_user_10_09_mlp_00[12]}
+set_placement -fixed -batch {p:pci_express_status_flr_pf_active[3]} {d:i_user_10_09_mlp_00[13]}
+set_placement -fixed -batch {p:pci_express_status_flr_vf_active} {d:i_user_10_09_mlp_00[9]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[0]} {d:i_user_10_09_lut_00[1]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[1]} {d:i_user_10_09_lut_00[2]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[2]} {d:i_user_10_09_lut_00[3]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[3]} {d:i_user_10_09_lut_00[4]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[4]} {d:i_user_10_09_lut_00[5]}
+set_placement -fixed -batch {p:pci_express_status_ltssm_state[5]} {d:i_user_10_09_lut_00[6]}
+# Boundary pins for pll
+set_placement -fixed -batch {p:i_mcu_clk} {d:i_user_06_00_trunk_00[1]}
+set_placement -fixed -batch {p:i_reg_clk} {d:i_user_06_00_trunk_00[0]}
+# Boundary pins for pll_nap
+set_placement -fixed -batch {p:i_mlp_clk} {d:i_user_06_00_trunk_00[2]}
+# Boundary pins for pll_pcie
+set_placement -fixed -batch {p:pll_pcie_lock} {d:i_user_12_08_lut_17[2]}
+# Boundary pins for vp_clkio_ne
+set_placement -fixed -batch {p:pcie_perst_l} {d:i_user_06_09_trunk_00[127]}
+# Boundary pins for vp_clkio_se
+# Boundary pins for vp_clkio_sw
+# Boundary pins for vp_pll_se_2
+# Boundary pins for vp_pll_sw_2
+
+######################################
+# End IO Ring Boundary Pin Placement File
+######################################

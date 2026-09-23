@@ -1,0 +1,32 @@
+#ACE 10.5.2 IP Properties File, generated on:
+#Wed Sep 16 07:52:11 PDT 2026
+acxip_version=8
+data_rate=16
+dc0_axi_rd_parity_check=Disabled
+dc0_axi_wr_parity_gen=Disabled
+dc1_axi_rd_parity_check=Disabled
+dc1_axi_wr_parity_gen=Disabled
+dc_axi_clock_name=gddr6_W_dci_clk
+enable_advanced_eq_settings=Yes
+enable_controller_training=No
+enable_dc0_axi_interface=No
+enable_dc1_axi_interface=No
+enable_dc_interrupts_interface=No
+enable_ecc=No
+enable_temperature_interrupt=No
+gddr6_core_clock_name=gddr_W_ctrl_clk
+library=Speedster7t
+mem_capacity=16
+memory_part=MT61K512M32-E
+mode_of_operation=Clamshell-x8
+name=GDDR6
+noc0_axi_rd_parity_check=Disabled
+noc0_axi_wr_parity_gen=Disabled
+noc1_axi_rd_parity_check=Disabled
+noc1_axi_wr_parity_gen=Disabled
+output.path_relative_to=ACXIP File
+placement=GDDR6_4
+reset_source=Internal Reset from FCU
+reset_source_name=gddr6_rstn
+target_device=AC7t1500
+zq_calib=Master
