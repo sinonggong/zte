@@ -1,0 +1,13 @@
+s1s_325 -- half node array bitstream for the VP815 (AC7t1500), id word 0x53310a
+
+Design: 18 nodes = 6 x 32-stage int8 chain + 6 x 16-stage int8 chain + 2 uint8 PV chain + 4 two-lane vector nodes
+(launch_pi0_s0_build.sh <tag> 14 2 4 6, PI0_S0_STRIPE=12 PI0_S0_RESET_FP=1, per-node regions, seed 7).
+Features: vector write merge (vu_wr_merge), double-buffered GEMM feeder (opcode 6 bit 106), PDQ (vu_pdq),
+GDDR6 striping with the run-time switch (window beat N_NODE+1 bit 64) and axi_id_reorder.
+Routed Fmax: array 355.6, fabric 123.4, vector 135.8 MHz.  Clocks in this file: array 325, vector 125 (ODN 64),
+fabric 117.6 MHz (ODN 68) -- run_pi0_s0_reclock_bitstream.sh on the routed implementation.
+Chunk images: generate with PI0_CHUNK_GEMM_DB=1 (chdb*/chdbp* families); pi0_chunk_run sets the striping switch
+from the image's info.json.  Whole pi0 chunk bit-exact against the generator in 4.76 s (DB, no PDQ).
+Map for pi0_chunk_run / the policy server: --map vector:14,int8:0,uint8:12
+
+File: tc_ref_design_top.hex.gz (gunzip before programming; SHA256SUMS lists the uncompressed hex).
