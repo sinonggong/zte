@@ -1,0 +1,9 @@
+build/
+__pycache__/
+*.pyc
+obj_dir/
+*.egg-info/
+src/ace/impl_*/
+src/ace/*.lock
+src/ace/ioring_design/*_pins.*
+logs/
