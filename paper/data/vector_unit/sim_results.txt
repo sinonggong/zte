@@ -1,0 +1,148 @@
+# RTL simulation results (paper/rtl/run_vu_lane_sim.sh all 1 / tp 1), final RTL, 2026-09-15 14:49:44 PDT
+== run_pos_s1.log
+CASE 0 rand_ADD_bf16                            op=0 in=4586 out=4626 cycles=6118 PASS
+CASE 1 rand_ADD_fp32_table                      op=0 in=2327 out=2347 cycles=3164 PASS
+CASE 2 rand_RMS_STAT                            op=1 in=3740 out=40 cycles=7867 PASS
+CASE 3 rand_RMS_APPLY                           op=2 in=2689 out=2729 cycles=3638 PASS
+CASE 4 rand_LN_STAT                             op=3 in=4501 out=80 cycles=12775 PASS
+CASE 5 rand_LN_APPLY                            op=4 in=5846 out=5886 cycles=7876 PASS
+CASE 6 rand_ROPE_A                              op=5 in=3521 out=3561 cycles=4821 PASS
+CASE 7 rand_ROPE_B                              op=6 in=3521 out=3561 cycles=4731 PASS
+CASE 8 rand_GELU                                op=7 in=3055 out=3095 cycles=4101 PASS
+CASE 9 rand_SILU                                op=9 in=4460 out=4500 cycles=6021 PASS
+CASE 10 rand_GEGLU                               op=8 in=3819 out=3859 cycles=5132 PASS
+CASE 11 rand_SMAX_SUM                            op=10 in=8622 out=40 cycles=13536 PASS
+CASE 12 rand_SMAX_OUT                            op=11 in=8622 out=8662 cycles=11588 PASS
+CASE 13 rand_SMAX_Q8                             op=12 in=8622 out=8662 cycles=13445 PASS
+CASE 14 rand_QUANT                               op=13 in=6530 out=6570 cycles=8647 PASS
+CASE 15 rand_DEQUANT_bias0_fp320                 op=14 in=1084 out=1104 cycles=1490 PASS
+CASE 16 rand_DEQUANT_bias0_fp321                 op=14 in=2366 out=2386 cycles=3259 PASS
+CASE 17 rand_DEQUANT_bias1_fp320                 op=14 in=2058 out=2078 cycles=2788 PASS
+CASE 18 rand_DEQUANT_bias1_fp321                 op=14 in=2941 out=2961 cycles=3949 PASS
+CASE 19 rand_EULER                               op=15 in=5243 out=5283 cycles=7002 PASS
+CASE 20 cap_LN_STAT_vis.L13.ln1                  op=3 in=4608 out=8 cycles=6897 PASS
+CASE 21 cap_LN_APPLY_vis.L13.ln1                 op=4 in=4608 out=4612 cycles=6233 PASS
+CASE 22 cap_RMS_STAT_lm.L9.input_layernorm       op=1 in=8192 out=4 cycles=11185 PASS
+CASE 23 cap_RMS_APPLY_lm.L9.input_layernorm      op=2 in=8192 out=8196 cycles=10881 PASS
+CASE 24 cap_RMS_STAT_ex.L17.post_attention_layernorm op=1 in=4096 out=4 cycles=5755 PASS
+CASE 25 cap_RMS_APPLY_ex.L17.post_attention_layernorm op=2 in=4096 out=4100 cycles=5462 PASS
+CASE 26 cap_ROPE_A_lm.L0.q                       op=5 in=1024 out=1028 cycles=1419 PASS
+CASE 27 cap_ROPE_B_lm.L0.q                       op=6 in=1024 out=1028 cycles=1422 PASS
+CASE 28 cap_GELU_vis.L13.fc1                     op=7 in=8608 out=8610 cycles=11492 PASS
+CASE 29 cap_GEGLU_lm.L9                          op=8 in=32768 out=32770 cycles=43839 PASS
+CASE 30 cap_GEGLU_ex.L0                          op=8 in=16384 out=16388 cycles=21830 PASS
+CASE 31 cap_SILU_ex.action_time_mlp              op=9 in=4096 out=4100 cycles=5467 PASS
+CASE 32 cap_SMAX_SUM_vis.L13                     op=10 in=1024 out=4 cycles=1539 PASS
+CASE 33 cap_SMAX_OUT_vis.L13                     op=11 in=1024 out=1028 cycles=1407 PASS
+CASE 34 cap_SMAX_Q8_vis.L13                      op=12 in=1024 out=1028 cycles=1561 PASS
+CASE 35 cap_SMAX_SUM_lm.L9                       op=10 in=2100 out=4 cycles=2963 PASS
+CASE 36 cap_SMAX_OUT_lm.L9                       op=11 in=2100 out=2104 cycles=2796 PASS
+CASE 37 cap_SMAX_Q8_lm.L9                        op=12 in=2100 out=2104 cycles=2994 PASS
+CASE 38 cap_SMAX_SUM_ex.L9                       op=10 in=3468 out=4 cycles=4855 PASS
+CASE 39 cap_SMAX_OUT_ex.L9                       op=11 in=3468 out=3472 cycles=4598 PASS
+CASE 40 cap_SMAX_Q8_ex.L9                        op=12 in=3468 out=3472 cycles=4856 PASS
+CASE 41 cap_QUANT                                op=13 in=43264 out=43272 cycles=57761 PASS
+CASE 42 cap_DEQUANT_ex.L9.gate_proj              op=14 in=8192 out=8194 cycles=10895 PASS
+CASE 43 cap_DEQUANT_action_out_proj              op=14 in=128 out=132 cycles=220 PASS
+CASE 44 cap_EULER                                op=15 in=1600 out=1650 cycles=2193 PASS
+CASE 45 cap_ADD_vis.L13_residual                 op=0 in=4608 out=4612 cycles=6253 PASS
+CASE 46 cap_ADD_vis_pos_emb                      op=0 in=2304 out=2306 cycles=3111 PASS
+RESULT PASS cases=47 beats=226264 mismatches=0 cycles=375694 gap=25 stall=20
+== run_neg_table_s1.log
+CASE 0 rand_ADD_bf16                            op=0 in=4586 out=4626 cycles=6118 PASS
+CASE 1 rand_ADD_fp32_table                      op=0 in=2327 out=2347 cycles=3164 PASS
+CASE 2 rand_RMS_STAT                            op=1 in=3740 out=40 cycles=7867 PASS
+CASE 3 rand_RMS_APPLY                           op=2 in=2689 out=2729 cycles=3638 PASS
+CASE 4 rand_LN_STAT                             op=3 in=4501 out=80 cycles=12775 PASS
+CASE 5 rand_LN_APPLY                            op=4 in=5846 out=5886 cycles=7876 PASS
+CASE 6 rand_ROPE_A                              op=5 in=3521 out=3561 cycles=4821 PASS
+CASE 7 rand_ROPE_B                              op=6 in=3521 out=3561 cycles=4731 PASS
+CASE 8 rand_GELU                                op=7 in=3055 out=3095 cycles=4101 FAIL (309 mismatches)
+CASE 9 rand_SILU                                op=9 in=4460 out=4500 cycles=6021 PASS
+CASE 10 rand_GEGLU                               op=8 in=3819 out=3859 cycles=5132 FAIL (133 mismatches)
+CASE 11 rand_SMAX_SUM                            op=10 in=8622 out=40 cycles=13536 PASS
+CASE 12 rand_SMAX_OUT                            op=11 in=8622 out=8662 cycles=11588 PASS
+CASE 13 rand_SMAX_Q8                             op=12 in=8622 out=8662 cycles=13445 PASS
+CASE 14 rand_QUANT                               op=13 in=6530 out=6570 cycles=8647 PASS
+CASE 15 rand_DEQUANT_bias0_fp320                 op=14 in=1084 out=1104 cycles=1490 PASS
+CASE 16 rand_DEQUANT_bias0_fp321                 op=14 in=2366 out=2386 cycles=3259 PASS
+CASE 17 rand_DEQUANT_bias1_fp320                 op=14 in=2058 out=2078 cycles=2788 PASS
+CASE 18 rand_DEQUANT_bias1_fp321                 op=14 in=2941 out=2961 cycles=3949 PASS
+CASE 19 rand_EULER                               op=15 in=5243 out=5283 cycles=7002 PASS
+CASE 20 cap_LN_STAT_vis.L13.ln1                  op=3 in=4608 out=8 cycles=6897 PASS
+CASE 21 cap_LN_APPLY_vis.L13.ln1                 op=4 in=4608 out=4612 cycles=6233 PASS
+CASE 22 cap_RMS_STAT_lm.L9.input_layernorm       op=1 in=8192 out=4 cycles=11185 PASS
+CASE 23 cap_RMS_APPLY_lm.L9.input_layernorm      op=2 in=8192 out=8196 cycles=10881 PASS
+CASE 24 cap_RMS_STAT_ex.L17.post_attention_layernorm op=1 in=4096 out=4 cycles=5755 PASS
+CASE 25 cap_RMS_APPLY_ex.L17.post_attention_layernorm op=2 in=4096 out=4100 cycles=5462 PASS
+CASE 26 cap_ROPE_A_lm.L0.q                       op=5 in=1024 out=1028 cycles=1419 PASS
+CASE 27 cap_ROPE_B_lm.L0.q                       op=6 in=1024 out=1028 cycles=1422 PASS
+CASE 28 cap_GELU_vis.L13.fc1                     op=7 in=8608 out=8610 cycles=11492 FAIL (1123 mismatches)
+CASE 29 cap_GEGLU_lm.L9                          op=8 in=32768 out=32770 cycles=43839 FAIL (150 mismatches)
+CASE 30 cap_GEGLU_ex.L0                          op=8 in=16384 out=16388 cycles=21830 FAIL (539 mismatches)
+CASE 31 cap_SILU_ex.action_time_mlp              op=9 in=4096 out=4100 cycles=5467 PASS
+CASE 32 cap_SMAX_SUM_vis.L13                     op=10 in=1024 out=4 cycles=1539 PASS
+CASE 33 cap_SMAX_OUT_vis.L13                     op=11 in=1024 out=1028 cycles=1407 PASS
+CASE 34 cap_SMAX_Q8_vis.L13                      op=12 in=1024 out=1028 cycles=1561 PASS
+CASE 35 cap_SMAX_SUM_lm.L9                       op=10 in=2100 out=4 cycles=2963 PASS
+CASE 36 cap_SMAX_OUT_lm.L9                       op=11 in=2100 out=2104 cycles=2796 PASS
+CASE 37 cap_SMAX_Q8_lm.L9                        op=12 in=2100 out=2104 cycles=2994 PASS
+CASE 38 cap_SMAX_SUM_ex.L9                       op=10 in=3468 out=4 cycles=4855 PASS
+CASE 39 cap_SMAX_OUT_ex.L9                       op=11 in=3468 out=3472 cycles=4598 PASS
+CASE 40 cap_SMAX_Q8_ex.L9                        op=12 in=3468 out=3472 cycles=4856 PASS
+CASE 41 cap_QUANT                                op=13 in=43264 out=43272 cycles=57761 PASS
+CASE 42 cap_DEQUANT_ex.L9.gate_proj              op=14 in=8192 out=8194 cycles=10895 PASS
+CASE 43 cap_DEQUANT_action_out_proj              op=14 in=128 out=132 cycles=220 PASS
+CASE 44 cap_EULER                                op=15 in=1600 out=1650 cycles=2193 PASS
+CASE 45 cap_ADD_vis.L13_residual                 op=0 in=4608 out=4612 cycles=6253 PASS
+CASE 46 cap_ADD_vis_pos_emb                      op=0 in=2304 out=2306 cycles=3111 PASS
+RESULT FAIL cases=47 beats=226264 mismatches=2254 cycles=375694 gap=25 stall=20
+== run_neg_round_s1.log
+CASE 0 rand_ADD_bf16                            op=0 in=4586 out=4626 cycles=6118 FAIL (161 mismatches)
+CASE 1 rand_ADD_fp32_table                      op=0 in=2327 out=2347 cycles=3164 FAIL (1 mismatches)
+CASE 2 rand_RMS_STAT                            op=1 in=3740 out=40 cycles=7867 PASS
+CASE 3 rand_RMS_APPLY                           op=2 in=2689 out=2729 cycles=3638 PASS
+CASE 4 rand_LN_STAT                             op=3 in=4501 out=80 cycles=12775 PASS
+CASE 5 rand_LN_APPLY                            op=4 in=5846 out=5886 cycles=7876 PASS
+CASE 6 rand_ROPE_A                              op=5 in=3521 out=3561 cycles=4821 PASS
+CASE 7 rand_ROPE_B                              op=6 in=3521 out=3561 cycles=4731 PASS
+CASE 8 rand_GELU                                op=7 in=3055 out=3095 cycles=4101 FAIL (5 mismatches)
+CASE 9 rand_SILU                                op=9 in=4460 out=4500 cycles=6021 FAIL (8 mismatches)
+CASE 10 rand_GEGLU                               op=8 in=3819 out=3859 cycles=5132 FAIL (3 mismatches)
+CASE 11 rand_SMAX_SUM                            op=10 in=8622 out=40 cycles=13536 PASS
+CASE 12 rand_SMAX_OUT                            op=11 in=8622 out=8662 cycles=11588 PASS
+CASE 13 rand_SMAX_Q8                             op=12 in=8622 out=8662 cycles=13445 PASS
+CASE 14 rand_QUANT                               op=13 in=6530 out=6570 cycles=8647 PASS
+CASE 15 rand_DEQUANT_bias0_fp320                 op=14 in=1084 out=1104 cycles=1490 PASS
+CASE 16 rand_DEQUANT_bias0_fp321                 op=14 in=2366 out=2386 cycles=3259 PASS
+CASE 17 rand_DEQUANT_bias1_fp320                 op=14 in=2058 out=2078 cycles=2788 PASS
+CASE 18 rand_DEQUANT_bias1_fp321                 op=14 in=2941 out=2961 cycles=3949 PASS
+CASE 19 rand_EULER                               op=15 in=5243 out=5283 cycles=7002 PASS
+CASE 20 cap_LN_STAT_vis.L13.ln1                  op=3 in=4608 out=8 cycles=6897 PASS
+CASE 21 cap_LN_APPLY_vis.L13.ln1                 op=4 in=4608 out=4612 cycles=6233 PASS
+CASE 22 cap_RMS_STAT_lm.L9.input_layernorm       op=1 in=8192 out=4 cycles=11185 PASS
+CASE 23 cap_RMS_APPLY_lm.L9.input_layernorm      op=2 in=8192 out=8196 cycles=10881 PASS
+CASE 24 cap_RMS_STAT_ex.L17.post_attention_layernorm op=1 in=4096 out=4 cycles=5755 PASS
+CASE 25 cap_RMS_APPLY_ex.L17.post_attention_layernorm op=2 in=4096 out=4100 cycles=5462 PASS
+CASE 26 cap_ROPE_A_lm.L0.q                       op=5 in=1024 out=1028 cycles=1419 PASS
+CASE 27 cap_ROPE_B_lm.L0.q                       op=6 in=1024 out=1028 cycles=1422 PASS
+CASE 28 cap_GELU_vis.L13.fc1                     op=7 in=8608 out=8610 cycles=11492 FAIL (41 mismatches)
+CASE 29 cap_GEGLU_lm.L9                          op=8 in=32768 out=32770 cycles=43839 PASS
+CASE 30 cap_GEGLU_ex.L0                          op=8 in=16384 out=16388 cycles=21830 FAIL (8 mismatches)
+CASE 31 cap_SILU_ex.action_time_mlp              op=9 in=4096 out=4100 cycles=5467 PASS
+CASE 32 cap_SMAX_SUM_vis.L13                     op=10 in=1024 out=4 cycles=1539 PASS
+CASE 33 cap_SMAX_OUT_vis.L13                     op=11 in=1024 out=1028 cycles=1407 PASS
+CASE 34 cap_SMAX_Q8_vis.L13                      op=12 in=1024 out=1028 cycles=1561 PASS
+CASE 35 cap_SMAX_SUM_lm.L9                       op=10 in=2100 out=4 cycles=2963 PASS
+CASE 36 cap_SMAX_OUT_lm.L9                       op=11 in=2100 out=2104 cycles=2796 PASS
+CASE 37 cap_SMAX_Q8_lm.L9                        op=12 in=2100 out=2104 cycles=2994 PASS
+CASE 38 cap_SMAX_SUM_ex.L9                       op=10 in=3468 out=4 cycles=4855 PASS
+CASE 39 cap_SMAX_OUT_ex.L9                       op=11 in=3468 out=3472 cycles=4598 PASS
+CASE 40 cap_SMAX_Q8_ex.L9                        op=12 in=3468 out=3472 cycles=4856 PASS
+CASE 41 cap_QUANT                                op=13 in=43264 out=43272 cycles=57761 PASS
+CASE 42 cap_DEQUANT_ex.L9.gate_proj              op=14 in=8192 out=8194 cycles=10895 FAIL (1 mismatches)
+CASE 43 cap_DEQUANT_action_out_proj              op=14 in=128 out=132 cycles=220 PASS
+CASE 44 cap_EULER                                op=15 in=1600 out=1650 cycles=2193 PASS
+CASE 45 cap_ADD_vis.L13_residual                 op=0 in=4608 out=4612 cycles=6253 FAIL (434 mismatches)
+CASE 46 cap_ADD_vis_pos_emb                      op=0 in=2304 out=2306 cycles=3111 PASS
+RESULT FAIL cases=47 beats=226264 mismatches=662 cycles=375694 gap=25 stall=20

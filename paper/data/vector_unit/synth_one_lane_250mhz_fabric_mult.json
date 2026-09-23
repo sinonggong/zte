@@ -1,0 +1,36 @@
+{
+ "workdir": "/home/sngong/projects/pi0_achronix/build/paper_vu_synth/l250i_logic",
+ "routed": {
+  "lut": 4763,
+  "dff": 7868,
+  "alu8": 334,
+  "bram72k": 7,
+  "bram_kinds": {
+   "BRAM72K_SDP": 7
+  },
+  "lram2k": 0,
+  "mlp72": 0,
+  "mlp_kinds": {},
+  "mlp_sites_incl_inaccessible": 0,
+  "lram_sites_incl_inaccessible": 0,
+  "rlb_tiles": 849
+ },
+ "timing": {
+  "report": "vu_top_timing_routed_C1_0p90V_0C.txt",
+  "setup_slack_ns": 0.395,
+  "hold_slack_ns": 0.011,
+  "target_mhz": 250.0,
+  "upper_limit_mhz": 277.4,
+  "worst_path": {
+   "startpoint": "u.u_mul2.ym1_12_",
+   "endpoint": "u.u_mul2.p2_1_mod_21_",
+   "logic_delay_ns": 0.758,
+   "net_delay_ns": 2.773,
+   "logic_levels": 10
+  }
+ },
+ "synplify": {
+  "est_mhz": 353.1,
+  "errors": 0
+ }
+}

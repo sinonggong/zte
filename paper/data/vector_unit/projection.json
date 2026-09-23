@@ -1,0 +1,398 @@
+{
+ "inputs": {
+  "synth": "build/paper_vu_synth/l250i/result.json",
+  "tp": "build/paper_vu_sim/run_tp.log"
+ },
+ "lanes": 32,
+ "clock_mhz": 250.0,
+ "one_lane": {
+  "routed": {
+   "lut": 3504,
+   "dff": 6490,
+   "alu8": 144,
+   "bram72k": 7,
+   "bram_kinds": {
+    "BRAM72K_SDP": 7
+   },
+   "lram2k": 0,
+   "mlp72": 4,
+   "mlp_kinds": {
+    "MLP72_INT16_MULT_2X": 1,
+    "MLP72_INT8_MULT_4X": 1,
+    "MLP72": 2
+   },
+   "mlp_sites_incl_inaccessible": 4,
+   "lram_sites_incl_inaccessible": 4,
+   "rlb_tiles": 659
+  },
+  "timing": {
+   "report": "vu_top_timing_routed_C1_0p90V_0C.txt",
+   "setup_slack_ns": 1.226,
+   "hold_slack_ns": 0.009,
+   "target_mhz": 250.0,
+   "upper_limit_mhz": 360.5
+  }
+ },
+ "per_row_overhead": {
+  "ADD": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "RMS_STAT": {
+   "cycles_1row": 329,
+   "cycles_nrows": 2618,
+   "pass_": true,
+   "overhead_cycles_per_row": 71.0,
+   "first_row_extra_cycles": 73
+  },
+  "RMS_APPLY": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "LN_STAT": {
+   "cycles_1row": 427,
+   "cycles_nrows": 3402,
+   "pass_": true,
+   "overhead_cycles_per_row": 169.0,
+   "first_row_extra_cycles": 171
+  },
+  "LN_APPLY": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "ROPE_A": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "ROPE_B": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "GELU": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "GEGLU": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "SILU": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "SMAX_SUM": {
+   "cycles_1row": 308,
+   "cycles_nrows": 2450,
+   "pass_": true,
+   "overhead_cycles_per_row": 50.0,
+   "first_row_extra_cycles": 52
+  },
+  "SMAX_OUT": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "SMAX_Q8": {
+   "cycles_1row": 308,
+   "cycles_nrows": 2450,
+   "pass_": true,
+   "overhead_cycles_per_row": 50.0,
+   "first_row_extra_cycles": 52
+  },
+  "QUANT": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "DEQUANT": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  },
+  "EULER": {
+   "cycles_1row": 292,
+   "cycles_nrows": 2091,
+   "pass_": true,
+   "overhead_cycles_per_row": 1.0,
+   "first_row_extra_cycles": 36
+  }
+ },
+ "resources": {
+  "lut": {
+   "one_lane": 3504,
+   "lanes": 112128,
+   "sites": 691200,
+   "percent": 16.22222222222222
+  },
+  "dff": {
+   "one_lane": 6490,
+   "lanes": 207680,
+   "sites": 1382400,
+   "percent": 15.023148148148149
+  },
+  "alu8": {
+   "one_lane": 144,
+   "lanes": 4608,
+   "sites": 172800,
+   "percent": 2.6666666666666665
+  },
+  "bram72k": {
+   "one_lane": 7,
+   "lanes": 224,
+   "sites": 2560,
+   "percent": 8.75
+  },
+  "lram2k": {
+   "one_lane": 0,
+   "lanes": 0,
+   "sites": 2560,
+   "percent": 0.0
+  },
+  "mlp72": {
+   "one_lane": 4,
+   "lanes": 128,
+   "sites": 2560,
+   "percent": 5.0
+  },
+  "rlb_tiles": {
+   "one_lane": 659,
+   "lanes": 21088,
+   "sites": 57600,
+   "percent": 36.611111111111114
+  },
+  "bram72k_tables_shared_dual_port_option": {
+   "lanes": 160,
+   "percent": 6.25,
+   "note": "assumption: the four function-table BRAMs of two lanes merged into dual-port BRAMs (not synthesised)"
+  }
+ },
+ "int8_attention": {
+  "visits_vector_unit": 1262947824,
+  "visits_all": 2109399072,
+  "lane_seconds_vector_unit": 5.16152744,
+  "lane_seconds_incl_chain_dequant": 8.551159776,
+  "wall_seconds_bound_vector_unit": 0.1612977325,
+  "wall_seconds_bound_incl_chain_dequant": 0.267223743,
+  "elements_per_s_lanes_vector_unit": 7829916790.67776,
+  "per_class": {
+   "QUANT": {
+    "visits": 493790144,
+    "lane_cycles": 494772846.0,
+    "lane_seconds": 1.979091384,
+    "elements_per_s_one_lane": 249503457.99696535,
+    "elements_per_s_lanes": 7984110655.902891,
+    "overhead_fraction": 0.0019901207262653653
+   },
+   "chain-side DEQUANT": {
+    "visits": 846451248,
+    "lane_cycles": 847408084.0,
+    "lane_seconds": 3.389632336,
+    "elements_per_s_one_lane": 249717716.87748024,
+    "elements_per_s_lanes": 7990966940.079368,
+    "overhead_fraction": 0.0011304088714627625
+   },
+   "ADD": {
+    "visits": 89948160,
+    "lane_cycles": 90013580.0,
+    "lane_seconds": 0.36005432,
+    "elements_per_s_one_lane": 249818305.19350526,
+    "elements_per_s_lanes": 7994185766.192168,
+    "overhead_fraction": 0.000727307818192191
+   },
+   "LN_STAT+LN_APPLY": {
+    "visits": 64880640,
+    "lane_cycles": 69667840.0,
+    "lane_seconds": 0.27867136,
+    "elements_per_s_one_lane": 232821341.956346,
+    "elements_per_s_lanes": 7450282942.603072,
+    "overhead_fraction": 0.07378472222222232
+   },
+   "SMAX_Q8": {
+    "visits": 159985584,
+    "lane_cycles": 178496784.0,
+    "lane_seconds": 0.713987136,
+    "elements_per_s_one_lane": 224073482.46677655,
+    "elements_per_s_lanes": 7170351438.93685,
+    "overhead_fraction": 0.11570542505879788
+   },
+   "GELU": {
+    "visits": 59498496,
+    "lane_cycles": 59512320.0,
+    "lane_seconds": 0.23804928,
+    "elements_per_s_one_lane": 249941927.99070847,
+    "elements_per_s_lanes": 7998141695.702671,
+    "overhead_fraction": 0.00023234200743504907
+   },
+   "RMS_STAT+RMS_APPLY": {
+    "visits": 116039680,
+    "lane_cycles": 118758400.0,
+    "lane_seconds": 0.4750336,
+    "elements_per_s_one_lane": 244276783.78960982,
+    "elements_per_s_lanes": 7816857081.267514,
+    "overhead_fraction": 0.023429226967878636
+   },
+   "ROPE_A+ROPE_B": {
+    "visits": 85847040,
+    "lane_cycles": 86182380.0,
+    "lane_seconds": 0.34472952,
+    "elements_per_s_one_lane": 249027237.3540856,
+    "elements_per_s_lanes": 7968871595.330739,
+    "overhead_fraction": 0.00390625
+   },
+   "GEGLU": {
+    "visits": 192430080,
+    "lane_cycles": 192448710.0,
+    "lane_seconds": 0.76979484,
+    "elements_per_s_one_lane": 249975798.74658552,
+    "elements_per_s_lanes": 7999225559.890737,
+    "overhead_fraction": 9.681438577580082e-05
+   },
+   "SILU": {
+    "visits": 512000,
+    "lane_cycles": 512500.0,
+    "lane_seconds": 0.00205,
+    "elements_per_s_one_lane": 249756097.56097558,
+    "elements_per_s_lanes": 7992195121.951219,
+    "overhead_fraction": 0.0009765625
+   },
+   "EULER": {
+    "visits": 16000,
+    "lane_cycles": 16500.0,
+    "lane_seconds": 6.6e-05,
+    "elements_per_s_one_lane": 242424242.4242424,
+    "elements_per_s_lanes": 7757575757.575757,
+    "overhead_fraction": 0.03125
+   }
+  }
+ },
+ "bf16_attention": {
+  "visits_vector_unit": 1327464864,
+  "visits_all": 2173916112,
+  "lane_seconds_vector_unit": 5.417677088,
+  "lane_seconds_incl_chain_dequant": 8.807309424,
+  "wall_seconds_bound_vector_unit": 0.169302409,
+  "wall_seconds_bound_incl_chain_dequant": 0.2752284195,
+  "elements_per_s_lanes_vector_unit": 7840791349.873823,
+  "per_class": {
+   "QUANT": {
+    "visits": 398321600,
+    "lane_cycles": 398454450.0,
+    "lane_seconds": 1.5938178,
+    "elements_per_s_one_lane": 249916646.68320304,
+    "elements_per_s_lanes": 7997332693.862497,
+    "overhead_fraction": 0.0003335244686706318
+   },
+   "chain-side DEQUANT": {
+    "visits": 846451248,
+    "lane_cycles": 847408084.0,
+    "lane_seconds": 3.389632336,
+    "elements_per_s_one_lane": 249717716.87748024,
+    "elements_per_s_lanes": 7990966940.079368,
+    "overhead_fraction": 0.0011304088714627625
+   },
+   "ADD": {
+    "visits": 89948160,
+    "lane_cycles": 90013580.0,
+    "lane_seconds": 0.36005432,
+    "elements_per_s_one_lane": 249818305.19350526,
+    "elements_per_s_lanes": 7994185766.192168,
+    "overhead_fraction": 0.000727307818192191
+   },
+   "LN_STAT+LN_APPLY": {
+    "visits": 64880640,
+    "lane_cycles": 69667840.0,
+    "lane_seconds": 0.27867136,
+    "elements_per_s_one_lane": 232821341.956346,
+    "elements_per_s_lanes": 7450282942.603072,
+    "overhead_fraction": 0.07378472222222232
+   },
+   "SMAX_SUM+SMAX_OUT": {
+    "visits": 319971168,
+    "lane_cycles": 338852592.0,
+    "lane_seconds": 1.355410368,
+    "elements_per_s_one_lane": 236069588.63103518,
+    "elements_per_s_lanes": 7554226836.193126,
+    "overhead_fraction": 0.05900976677998693
+   },
+   "GELU": {
+    "visits": 59498496,
+    "lane_cycles": 59512320.0,
+    "lane_seconds": 0.23804928,
+    "elements_per_s_one_lane": 249941927.99070847,
+    "elements_per_s_lanes": 7998141695.702671,
+    "overhead_fraction": 0.00023234200743504907
+   },
+   "RMS_STAT+RMS_APPLY": {
+    "visits": 116039680,
+    "lane_cycles": 118758400.0,
+    "lane_seconds": 0.4750336,
+    "elements_per_s_one_lane": 244276783.78960982,
+    "elements_per_s_lanes": 7816857081.267514,
+    "overhead_fraction": 0.023429226967878636
+   },
+   "ROPE_A+ROPE_B": {
+    "visits": 85847040,
+    "lane_cycles": 86182380.0,
+    "lane_seconds": 0.34472952,
+    "elements_per_s_one_lane": 249027237.3540856,
+    "elements_per_s_lanes": 7968871595.330739,
+    "overhead_fraction": 0.00390625
+   },
+   "GEGLU": {
+    "visits": 192430080,
+    "lane_cycles": 192448710.0,
+    "lane_seconds": 0.76979484,
+    "elements_per_s_one_lane": 249975798.74658552,
+    "elements_per_s_lanes": 7999225559.890737,
+    "overhead_fraction": 9.681438577580082e-05
+   },
+   "SILU": {
+    "visits": 512000,
+    "lane_cycles": 512500.0,
+    "lane_seconds": 0.00205,
+    "elements_per_s_one_lane": 249756097.56097558,
+    "elements_per_s_lanes": 7992195121.951219,
+    "overhead_fraction": 0.0009765625
+   },
+   "EULER": {
+    "visits": 16000,
+    "lane_cycles": 16500.0,
+    "lane_seconds": 6.6e-05,
+    "elements_per_s_one_lane": 242424242.4242424,
+    "elements_per_s_lanes": 7757575757.575757,
+    "overhead_fraction": 0.03125
+   }
+  }
+ },
+ "assumptions": "* a lane executes one element per clock; a row of W elements of op o costs W + ovh(o) cycles (ovh measured);\n  * resources scale linearly with the lane count (no sharing of the table BRAMs; the dual-port sharing of the\n    architecture doc is listed as an option);\n  * the 32-lane wall time is the lane time / 32: perfect row parallelism, lanes always fed, no NoC / GDDR6 /\n    sequencer limit -- an upper bound on what the vector unit itself allows, not a chunk latency."
+}

@@ -1,0 +1,1725 @@
+{
+ "int8_attention": {
+  "int8_attention": true,
+  "rows": [
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "patch rows (14x14x3 taps) in",
+    "row": 588,
+    "rows": 512,
+    "elements": 301056,
+    "passes": 1,
+    "visits": 301056,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "patch embedding out (+bias)",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "+ position table (fp32)",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "LN_STAT+LN_APPLY",
+    "ops": [
+     "LN_STAT",
+     "LN_APPLY"
+    ],
+    "where": "layer_norm1/2",
+    "row": 1152,
+    "rows": 27648,
+    "elements": 31850496,
+    "passes": 2,
+    "visits": 63700992,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), out_proj in, fc1 in",
+    "row": 1152,
+    "rows": 41472,
+    "elements": 47775744,
+    "passes": 1,
+    "visits": 47775744,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q/k/v/out_proj out (+bias)",
+    "row": 1152,
+    "rows": 55296,
+    "elements": 63700992,
+    "passes": 1,
+    "visits": 63700992,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q, k, v per head row (INT8 QK^T, PV)",
+    "row": 72,
+    "rows": 663552,
+    "elements": 47775744,
+    "passes": 1,
+    "visits": 47775744,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 256 keys",
+    "row": 256,
+    "rows": 221184,
+    "elements": 56623104,
+    "passes": 1,
+    "visits": 56623104,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "SMAX_Q8",
+    "ops": [
+     "SMAX_Q8"
+    ],
+    "where": "softmax",
+    "row": 256,
+    "rows": 221184,
+    "elements": 56623104,
+    "passes": 1,
+    "visits": 56623104,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 72,
+    "rows": 221184,
+    "elements": 15925248,
+    "passes": 1,
+    "visits": 15925248,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 1152,
+    "rows": 27648,
+    "elements": 31850496,
+    "passes": 1,
+    "visits": 31850496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "fc1 out (+bias)",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "GELU",
+    "ops": [
+     "GELU"
+    ],
+    "where": "GELU (gelu_pytorch_tanh)",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "fc2 in",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "fc2 out (+bias)",
+    "row": 1152,
+    "rows": 13824,
+    "elements": 15925248,
+    "passes": 1,
+    "visits": 15925248,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "LN_STAT+LN_APPLY",
+    "ops": [
+     "LN_STAT",
+     "LN_APPLY"
+    ],
+    "where": "post_layernorm",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 2,
+    "visits": 1179648,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "projector in",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "projector out (+bias)",
+    "row": 2048,
+    "rows": 512,
+    "elements": 1048576,
+    "passes": 1,
+    "visits": 1048576,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "input/post_attention RMSNorm",
+    "row": 2048,
+    "rows": 18900,
+    "elements": 38707200,
+    "passes": 2,
+    "visits": 77414400,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), o in, gate/up in (shared)",
+    "row": 2048,
+    "rows": 28350,
+    "elements": 58060800,
+    "passes": 1,
+    "visits": 58060800,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q, o, down out",
+    "row": 2048,
+    "rows": 28350,
+    "elements": 58060800,
+    "passes": 1,
+    "visits": 58060800,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "k, v out",
+    "row": 256,
+    "rows": 18900,
+    "elements": 4838400,
+    "passes": 1,
+    "visits": 4838400,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "ROPE_A+ROPE_B",
+    "ops": [
+     "ROPE_A",
+     "ROPE_B"
+    ],
+    "where": "RoPE q (8 heads) and k",
+    "row": 256,
+    "rows": 85050,
+    "elements": 21772800,
+    "passes": 2,
+    "visits": 43545600,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q per head, k, v per token (INT8 QK^T, PV)",
+    "row": 256,
+    "rows": 94500,
+    "elements": 24192000,
+    "passes": 1,
+    "visits": 24192000,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 525 keys",
+    "row": 525,
+    "rows": 75600,
+    "elements": 39690000,
+    "passes": 1,
+    "visits": 39690000,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "SMAX_Q8",
+    "ops": [
+     "SMAX_Q8"
+    ],
+    "where": "softmax",
+    "row": 525,
+    "rows": 75600,
+    "elements": 39690000,
+    "passes": 1,
+    "visits": 39690000,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 256,
+    "rows": 75600,
+    "elements": 19353600,
+    "passes": 1,
+    "visits": 19353600,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 2048,
+    "rows": 18900,
+    "elements": 38707200,
+    "passes": 1,
+    "visits": 38707200,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "gate, up out",
+    "row": 16384,
+    "rows": 18900,
+    "elements": 309657600,
+    "passes": 1,
+    "visits": 309657600,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "GEGLU",
+    "ops": [
+     "GEGLU"
+    ],
+    "where": "GeGLU gelu_tanh(gate) * up",
+    "row": 16384,
+    "rows": 9450,
+    "elements": 154828800,
+    "passes": 1,
+    "visits": 154828800,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "down in",
+    "row": 16384,
+    "rows": 9450,
+    "elements": 154828800,
+    "passes": 1,
+    "visits": 154828800,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "state_proj / action_in_proj in",
+    "row": 32,
+    "rows": 510,
+    "elements": 16320,
+    "passes": 1,
+    "visits": 16320,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "state_proj / action_in_proj out (+bias)",
+    "row": 1024,
+    "rows": 510,
+    "elements": 522240,
+    "passes": 1,
+    "visits": 522240,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_time_mlp_in in (action ++ time)",
+    "row": 2048,
+    "rows": 500,
+    "elements": 1024000,
+    "passes": 1,
+    "visits": 1024000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_time_mlp_in out (+bias)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "SILU",
+    "ops": [
+     "SILU"
+    ],
+    "where": "SiLU",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_time_mlp_out in",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_time_mlp_out out (+bias)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "input/post_attention RMSNorm",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 2,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), gate/up in (shared)",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "o in",
+    "row": 2048,
+    "rows": 9180,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q out",
+    "row": 2048,
+    "rows": 9180,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "k, v out",
+    "row": 256,
+    "rows": 18360,
+    "elements": 4700160,
+    "passes": 1,
+    "visits": 4700160,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "ROPE_A+ROPE_B",
+    "ops": [
+     "ROPE_A",
+     "ROPE_B"
+    ],
+    "where": "RoPE q (8 heads) and k",
+    "row": 256,
+    "rows": 82620,
+    "elements": 21150720,
+    "passes": 2,
+    "visits": 42301440,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q per head, k, v per token (INT8 QK^T, PV)",
+    "row": 256,
+    "rows": 91800,
+    "elements": 23500800,
+    "passes": 1,
+    "visits": 23500800,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 867 keys (291 masked)",
+    "row": 867,
+    "rows": 73440,
+    "elements": 63672480,
+    "passes": 1,
+    "visits": 63672480,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "SMAX_Q8",
+    "ops": [
+     "SMAX_Q8"
+    ],
+    "where": "softmax (masked)",
+    "row": 867,
+    "rows": 73440,
+    "elements": 63672480,
+    "passes": 1,
+    "visits": 63672480,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 256,
+    "rows": 73440,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "o, down out",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "gate, up out",
+    "row": 4096,
+    "rows": 18360,
+    "elements": 75202560,
+    "passes": 1,
+    "visits": 75202560,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "GEGLU",
+    "ops": [
+     "GEGLU"
+    ],
+    "where": "GeGLU gelu_tanh(gate) * up",
+    "row": 4096,
+    "rows": 9180,
+    "elements": 37601280,
+    "passes": 1,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "down in",
+    "row": 4096,
+    "rows": 9180,
+    "elements": 37601280,
+    "passes": 1,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "final norm (50 action rows)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 2,
+    "visits": 1024000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_out_proj in",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_out_proj out (+bias, fp32)",
+    "row": 32,
+    "rows": 500,
+    "elements": 16000,
+    "passes": 1,
+    "visits": 16000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "EULER",
+    "ops": [
+     "EULER"
+    ],
+    "where": "Euler x_t + dt v_t (fp32)",
+    "row": 32,
+    "rows": 500,
+    "elements": 16000,
+    "passes": 1,
+    "visits": 16000,
+    "chain_side": false
+   }
+  ],
+  "summary": {
+   "visits_all": 2109399072,
+   "visits_vector_unit": 1262947824,
+   "visits_chain_side_dequant": 846451248,
+   "visits_SigLIP_vector_unit": 369383424,
+   "visits_SigLIP_chain_side": 213311488,
+   "visits_LM_vector_unit": 591267600,
+   "visits_LM_chain_side": 431600400,
+   "visits_expert_vector_unit": 302296800,
+   "visits_expert_chain_side": 201539360,
+   "per_lane_op": {
+    "QUANT": {
+     "elements": 493790144,
+     "rows": 982702
+    },
+    "DEQUANT": {
+     "elements": 846451248,
+     "rows": 956836
+    },
+    "ADD": {
+     "elements": 89948160,
+     "rows": 65420
+    },
+    "LN_STAT": {
+     "elements": 32440320,
+     "rows": 28160
+    },
+    "LN_APPLY": {
+     "elements": 32440320,
+     "rows": 28160
+    },
+    "SMAX_Q8": {
+     "elements": 159985584,
+     "rows": 370224
+    },
+    "GELU": {
+     "elements": 59498496,
+     "rows": 13824
+    },
+    "RMS_STAT": {
+     "elements": 58019840,
+     "rows": 37760
+    },
+    "RMS_APPLY": {
+     "elements": 58019840,
+     "rows": 37760
+    },
+    "ROPE_A": {
+     "elements": 42923520,
+     "rows": 167670
+    },
+    "ROPE_B": {
+     "elements": 42923520,
+     "rows": 167670
+    },
+    "GEGLU": {
+     "elements": 192430080,
+     "rows": 18630
+    },
+    "SILU": {
+     "elements": 512000,
+     "rows": 500
+    },
+    "EULER": {
+     "elements": 16000,
+     "rows": 500
+    }
+   }
+  }
+ },
+ "bf16_attention": {
+  "int8_attention": false,
+  "rows": [
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "patch rows (14x14x3 taps) in",
+    "row": 588,
+    "rows": 512,
+    "elements": 301056,
+    "passes": 1,
+    "visits": 301056,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "patch embedding out (+bias)",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "+ position table (fp32)",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "LN_STAT+LN_APPLY",
+    "ops": [
+     "LN_STAT",
+     "LN_APPLY"
+    ],
+    "where": "layer_norm1/2",
+    "row": 1152,
+    "rows": 27648,
+    "elements": 31850496,
+    "passes": 2,
+    "visits": 63700992,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), out_proj in, fc1 in",
+    "row": 1152,
+    "rows": 41472,
+    "elements": 47775744,
+    "passes": 1,
+    "visits": 47775744,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q/k/v/out_proj out (+bias)",
+    "row": 1152,
+    "rows": 55296,
+    "elements": 63700992,
+    "passes": 1,
+    "visits": 63700992,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 256 keys",
+    "row": 256,
+    "rows": 221184,
+    "elements": 56623104,
+    "passes": 1,
+    "visits": 56623104,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "SMAX_SUM+SMAX_OUT",
+    "ops": [
+     "SMAX_SUM",
+     "SMAX_OUT"
+    ],
+    "where": "softmax",
+    "row": 256,
+    "rows": 221184,
+    "elements": 56623104,
+    "passes": 2,
+    "visits": 113246208,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 72,
+    "rows": 221184,
+    "elements": 15925248,
+    "passes": 1,
+    "visits": 15925248,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 1152,
+    "rows": 27648,
+    "elements": 31850496,
+    "passes": 1,
+    "visits": 31850496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "fc1 out (+bias)",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "GELU",
+    "ops": [
+     "GELU"
+    ],
+    "where": "GELU (gelu_pytorch_tanh)",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "fc2 in",
+    "row": 4304,
+    "rows": 13824,
+    "elements": 59498496,
+    "passes": 1,
+    "visits": 59498496,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "fc2 out (+bias)",
+    "row": 1152,
+    "rows": 13824,
+    "elements": 15925248,
+    "passes": 1,
+    "visits": 15925248,
+    "chain_side": true
+   },
+   {
+    "stage": "SigLIP",
+    "op": "LN_STAT+LN_APPLY",
+    "ops": [
+     "LN_STAT",
+     "LN_APPLY"
+    ],
+    "where": "post_layernorm",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 2,
+    "visits": 1179648,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "projector in",
+    "row": 1152,
+    "rows": 512,
+    "elements": 589824,
+    "passes": 1,
+    "visits": 589824,
+    "chain_side": false
+   },
+   {
+    "stage": "SigLIP",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "projector out (+bias)",
+    "row": 2048,
+    "rows": 512,
+    "elements": 1048576,
+    "passes": 1,
+    "visits": 1048576,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "input/post_attention RMSNorm",
+    "row": 2048,
+    "rows": 18900,
+    "elements": 38707200,
+    "passes": 2,
+    "visits": 77414400,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), o in, gate/up in (shared)",
+    "row": 2048,
+    "rows": 28350,
+    "elements": 58060800,
+    "passes": 1,
+    "visits": 58060800,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q, o, down out",
+    "row": 2048,
+    "rows": 28350,
+    "elements": 58060800,
+    "passes": 1,
+    "visits": 58060800,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "k, v out",
+    "row": 256,
+    "rows": 18900,
+    "elements": 4838400,
+    "passes": 1,
+    "visits": 4838400,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "ROPE_A+ROPE_B",
+    "ops": [
+     "ROPE_A",
+     "ROPE_B"
+    ],
+    "where": "RoPE q (8 heads) and k",
+    "row": 256,
+    "rows": 85050,
+    "elements": 21772800,
+    "passes": 2,
+    "visits": 43545600,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 525 keys",
+    "row": 525,
+    "rows": 75600,
+    "elements": 39690000,
+    "passes": 1,
+    "visits": 39690000,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "SMAX_SUM+SMAX_OUT",
+    "ops": [
+     "SMAX_SUM",
+     "SMAX_OUT"
+    ],
+    "where": "softmax",
+    "row": 525,
+    "rows": 75600,
+    "elements": 39690000,
+    "passes": 2,
+    "visits": 79380000,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 256,
+    "rows": 75600,
+    "elements": 19353600,
+    "passes": 1,
+    "visits": 19353600,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 2048,
+    "rows": 18900,
+    "elements": 38707200,
+    "passes": 1,
+    "visits": 38707200,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "gate, up out",
+    "row": 16384,
+    "rows": 18900,
+    "elements": 309657600,
+    "passes": 1,
+    "visits": 309657600,
+    "chain_side": true
+   },
+   {
+    "stage": "LM",
+    "op": "GEGLU",
+    "ops": [
+     "GEGLU"
+    ],
+    "where": "GeGLU gelu_tanh(gate) * up",
+    "row": 16384,
+    "rows": 9450,
+    "elements": 154828800,
+    "passes": 1,
+    "visits": 154828800,
+    "chain_side": false
+   },
+   {
+    "stage": "LM",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "down in",
+    "row": 16384,
+    "rows": 9450,
+    "elements": 154828800,
+    "passes": 1,
+    "visits": 154828800,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "state_proj / action_in_proj in",
+    "row": 32,
+    "rows": 510,
+    "elements": 16320,
+    "passes": 1,
+    "visits": 16320,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "state_proj / action_in_proj out (+bias)",
+    "row": 1024,
+    "rows": 510,
+    "elements": 522240,
+    "passes": 1,
+    "visits": 522240,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_time_mlp_in in (action ++ time)",
+    "row": 2048,
+    "rows": 500,
+    "elements": 1024000,
+    "passes": 1,
+    "visits": 1024000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_time_mlp_in out (+bias)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "SILU",
+    "ops": [
+     "SILU"
+    ],
+    "where": "SiLU",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_time_mlp_out in",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_time_mlp_out out (+bias)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "input/post_attention RMSNorm",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 2,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "q/k/v in (shared), gate/up in (shared)",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "o in",
+    "row": 2048,
+    "rows": 9180,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "q out",
+    "row": 2048,
+    "rows": 9180,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "k, v out",
+    "row": 256,
+    "rows": 18360,
+    "elements": 4700160,
+    "passes": 1,
+    "visits": 4700160,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "ROPE_A+ROPE_B",
+    "ops": [
+     "ROPE_A",
+     "ROPE_B"
+    ],
+    "where": "RoPE q (8 heads) and k",
+    "row": 256,
+    "rows": 82620,
+    "elements": 21150720,
+    "passes": 2,
+    "visits": 42301440,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "QK^T logits, 867 keys (291 masked)",
+    "row": 867,
+    "rows": 73440,
+    "elements": 63672480,
+    "passes": 1,
+    "visits": 63672480,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "SMAX_SUM+SMAX_OUT",
+    "ops": [
+     "SMAX_SUM",
+     "SMAX_OUT"
+    ],
+    "where": "softmax (masked)",
+    "row": 867,
+    "rows": 73440,
+    "elements": 63672480,
+    "passes": 2,
+    "visits": 127344960,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "PV per head",
+    "row": 256,
+    "rows": 73440,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "o, down out",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "ADD",
+    "ops": [
+     "ADD"
+    ],
+    "where": "residual adds",
+    "row": 1024,
+    "rows": 18360,
+    "elements": 18800640,
+    "passes": 1,
+    "visits": 18800640,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "gate, up out",
+    "row": 4096,
+    "rows": 18360,
+    "elements": 75202560,
+    "passes": 1,
+    "visits": 75202560,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "GEGLU",
+    "ops": [
+     "GEGLU"
+    ],
+    "where": "GeGLU gelu_tanh(gate) * up",
+    "row": 4096,
+    "rows": 9180,
+    "elements": 37601280,
+    "passes": 1,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "down in",
+    "row": 4096,
+    "rows": 9180,
+    "elements": 37601280,
+    "passes": 1,
+    "visits": 37601280,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "RMS_STAT+RMS_APPLY",
+    "ops": [
+     "RMS_STAT",
+     "RMS_APPLY"
+    ],
+    "where": "final norm (50 action rows)",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 2,
+    "visits": 1024000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "QUANT",
+    "ops": [
+     "QUANT"
+    ],
+    "where": "action_out_proj in",
+    "row": 1024,
+    "rows": 500,
+    "elements": 512000,
+    "passes": 1,
+    "visits": 512000,
+    "chain_side": false
+   },
+   {
+    "stage": "expert",
+    "op": "DEQUANT",
+    "ops": [
+     "DEQUANT"
+    ],
+    "where": "action_out_proj out (+bias, fp32)",
+    "row": 32,
+    "rows": 500,
+    "elements": 16000,
+    "passes": 1,
+    "visits": 16000,
+    "chain_side": true
+   },
+   {
+    "stage": "expert",
+    "op": "EULER",
+    "ops": [
+     "EULER"
+    ],
+    "where": "Euler x_t + dt v_t (fp32)",
+    "row": 32,
+    "rows": 500,
+    "elements": 16000,
+    "passes": 1,
+    "visits": 16000,
+    "chain_side": false
+   }
+  ],
+  "summary": {
+   "visits_all": 2173916112,
+   "visits_vector_unit": 1327464864,
+   "visits_chain_side_dequant": 846451248,
+   "visits_SigLIP_vector_unit": 378230784,
+   "visits_SigLIP_chain_side": 213311488,
+   "visits_LM_vector_unit": 606765600,
+   "visits_LM_chain_side": 431600400,
+   "visits_expert_vector_unit": 342468480,
+   "visits_expert_chain_side": 201539360,
+   "per_lane_op": {
+    "QUANT": {
+     "elements": 398321600,
+     "rows": 132850
+    },
+    "DEQUANT": {
+     "elements": 846451248,
+     "rows": 956836
+    },
+    "ADD": {
+     "elements": 89948160,
+     "rows": 65420
+    },
+    "LN_STAT": {
+     "elements": 32440320,
+     "rows": 28160
+    },
+    "LN_APPLY": {
+     "elements": 32440320,
+     "rows": 28160
+    },
+    "SMAX_SUM": {
+     "elements": 159985584,
+     "rows": 370224
+    },
+    "SMAX_OUT": {
+     "elements": 159985584,
+     "rows": 370224
+    },
+    "GELU": {
+     "elements": 59498496,
+     "rows": 13824
+    },
+    "RMS_STAT": {
+     "elements": 58019840,
+     "rows": 37760
+    },
+    "RMS_APPLY": {
+     "elements": 58019840,
+     "rows": 37760
+    },
+    "ROPE_A": {
+     "elements": 42923520,
+     "rows": 167670
+    },
+    "ROPE_B": {
+     "elements": 42923520,
+     "rows": 167670
+    },
+    "GEGLU": {
+     "elements": 192430080,
+     "rows": 18630
+    },
+    "SILU": {
+     "elements": 512000,
+     "rows": 500
+    },
+    "EULER": {
+     "elements": 16000,
+     "rows": 500
+    }
+   }
+  }
+ }
+}

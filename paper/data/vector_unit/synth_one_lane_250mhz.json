@@ -1,0 +1,40 @@
+{
+ "workdir": "/home/sngong/projects/pi0_achronix/build/paper_vu_synth/l250i",
+ "routed": {
+  "lut": 3504,
+  "dff": 6490,
+  "alu8": 144,
+  "bram72k": 7,
+  "bram_kinds": {
+   "BRAM72K_SDP": 7
+  },
+  "lram2k": 0,
+  "mlp72": 4,
+  "mlp_kinds": {
+   "MLP72_INT16_MULT_2X": 1,
+   "MLP72_INT8_MULT_4X": 1,
+   "MLP72": 2
+  },
+  "mlp_sites_incl_inaccessible": 4,
+  "lram_sites_incl_inaccessible": 4,
+  "rlb_tiles": 659
+ },
+ "timing": {
+  "report": "vu_top_timing_routed_C1_0p90V_0C.txt",
+  "setup_slack_ns": 1.226,
+  "hold_slack_ns": 0.009,
+  "target_mhz": 250.0,
+  "upper_limit_mhz": 360.5,
+  "worst_path": {
+   "startpoint": "u.u_qtab.o_b_2_0_0",
+   "endpoint": "u.srow_fp_ns_22_",
+   "logic_delay_ns": 1.131,
+   "net_delay_ns": 1.476,
+   "logic_levels": 4
+  }
+ },
+ "synplify": {
+  "est_mhz": 353.3,
+  "errors": 0
+ }
+}
