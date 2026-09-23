@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lerobot_policy_pi0_remote"
+version = "0.1.0"
+description = "LeRobot policy plugin: a pi0 policy whose chunk prediction runs on a remote host (the pi0 Desktop / FPGA server)"
+requires-python = ">=3.12"
+dependencies = ["requests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lerobot_policy_pi0_remote*"]
